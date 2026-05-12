@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 
 // ─── Storage ──────────────────────────────────────────────────────────────────
 const SK = { USERS:"mf3_users", PICKS:"mf3_picks", LEAGUES:"mf3_leagues", TOURNAMENTS:"mf3_tournaments" };
@@ -226,6 +226,7 @@ export default function App(){
       setActiveLeagueCode(myLeagues[0].code);
     }
     if(myLeagues.length===0) setActiveLeagueCode(null);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   },[leagues,currentUser]);
 
   const activeLeague = leagues.find(l=>l.code===activeLeagueCode)||null;
@@ -682,6 +683,7 @@ function MyPicksPage({user,leagues,saveLeagues,picks,savePicks,tournaments,activ
       setSelected(p.mains||[]);
       setTbs(p.tiebreakers||[]);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   },[activeLeagueCode]);
 
   if(myLeagues.length===0){
