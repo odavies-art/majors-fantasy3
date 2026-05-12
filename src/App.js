@@ -347,6 +347,16 @@ export default function App(){
 
   useEffect(() => {
     async function load(){
+      // Quick write test — insert then delete a dummy row to verify RLS allows writes
+      const testKey = "__test__";
+      const {error: testError} = await supabase.from("tournaments")
+        .upsert({league_code: testKey, name:"test"}, {onConflict:"league_code"});
+      if(testError){
+        setDbError(`Supabase write permission error: ${testError.message}. Run the RLS policy SQL in Supabase → SQL Editor.`);
+      } else {
+        await supabase.from("tournaments").delete().eq("league_code", testKey);
+      }
+
       const [dbUsers, dbLeagues, dbTournaments, dbPicks, dbRankings] = await Promise.all([
         db.getUsers(), db.getLeagues(), db.getTournaments(), db.getPicks(), db.getRankings(),
       ]);
@@ -391,22 +401,12 @@ export default function App(){
 
   const updateTournament = async (code, t) => {
     setTournaments(prev => ({...prev, [code]: t}));
-    try {
-      await db.upsertTournament(tournamentToDb(code, t));
-    } catch(e) {
-      console.error("updateTournament:", e.message);
-      setDbError(e.message);
-    }
+    await db.upsertTournament(tournamentToDb(code, t)); // throws on failure — caught by caller
   };
 
   const updateRankings = async (newRankings) => {
-    setRankings(newRankings); // update UI immediately
-    try {
-      await db.saveRankings(newRankings);
-    } catch(e) {
-      console.error("updateRankings:", e.message);
-      setDbError(e.message);
-    }
+    setRankings(newRankings);
+    await db.saveRankings(newRankings); // throws on failure — caught by caller
   };
 
   const isAdmin = currentUser?.role === "admin";
@@ -1205,20 +1205,28 @@ function TournamentSetup({league, tournament, onSave}){
     date: tournament.date||"", status: tournament.status||"upcoming",
     currentRound: tournament.currentRound||1, cutLine: tournament.cutLine??""
   });
-  const [locked, setLocked] = useState(tournament.locked||false);
-  const [saved,  setSaved]  = useState(false);
+  const [locked,  setLocked]  = useState(tournament.locked||false);
+  const [saved,   setSaved]   = useState(false);
+  const [saving,  setSaving]  = useState(false);
+  const [saveErr, setSaveErr] = useState("");
   const f = k => e => setForm(p => ({...p, [k]: e.target.value}));
   const selectedMajor = MAJORS.find(m => m.id === form.majorId);
 
   const save = async () => {
-    await onSave({
-      ...tournament, ...form,
-      name: selectedMajor?.name || tournament.name,
-      cutLine: form.cutLine === "" ? null : parseInt(form.cutLine),
-      currentRound: parseInt(form.currentRound),
-      locked,
-    });
-    setSaved(true); setTimeout(() => setSaved(false), 2000);
+    setSaving(true); setSaveErr("");
+    try {
+      await onSave({
+        ...tournament, ...form,
+        name: selectedMajor?.name || tournament.name,
+        cutLine: form.cutLine === "" ? null : parseInt(form.cutLine),
+        currentRound: parseInt(form.currentRound),
+        locked,
+      });
+      setSaved(true); setTimeout(() => setSaved(false), 2000);
+    } catch(e) {
+      setSaveErr(e.message);
+    }
+    setSaving(false);
   };
 
   return (
@@ -1270,7 +1278,12 @@ function TournamentSetup({league, tournament, onSave}){
           <span style={{fontSize:13, fontWeight:600, color:locked?C.accent:C.muted}}>{locked?"Locked":"Open"}</span>
         </div>
       </div>
-      <button className="btn-primary" onClick={save}>{saved?"✓ Saved!":"Save Tournament Settings"}</button>
+      <div style={{display:"flex", alignItems:"center", gap:14, flexWrap:"wrap"}}>
+        <button className="btn-primary" onClick={save} disabled={saving}>
+          {saving ? "Saving…" : saved ? "✓ Saved!" : "Save Tournament Settings"}
+        </button>
+        {saveErr && <span style={{color:"#f87171", fontSize:13}}>⚠ {saveErr}</span>}
+      </div>
     </div>
   );
 }
