@@ -115,7 +115,6 @@ async function fetchLiveData(majorId){
   const field = competitors.map((c, i) => {
     const athlete = c.athlete || {};
     const status  = c.status  || {};
-    const stats   = c.statistics || [];
 
     // Score relative to par — ESPN stores as displayValue e.g. "-5", "E", "+2"
     const scoreStr = c.score || "E";
