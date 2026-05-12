@@ -318,8 +318,8 @@ export default function App(){
         {page==="standings"   && <StandingsPage user={currentUser} leagues={leagues} saveLeagues={saveLeagues} updateLeagueInDb={updateLeagueInDb} picks={picks} tournaments={tournaments} activeLeagueCode={activeLeagueCode} setActiveLeagueCode={setActiveLeagueCode}/>}
         {page==="leaderboard" && <LeaderboardPage activeLeague={activeLeague} activeTournament={activeTournament} myLeagues={myLeagues} activeLeagueCode={activeLeagueCode} setActiveLeagueCode={setActiveLeagueCode}/>}
         {page==="rankings"    && <RankingsPage activeTournament={activeTournament}/>}
-        {page==="picks"       && !isAdmin && <MyPicksPage user={currentUser} leagues={leagues} saveLeagues={saveLeagues} updateLeagueInDb={updateLeagueInDb} picks={picks} savePicks={savePicks} tournaments={tournaments} activeLeagueCode={activeLeagueCode} setActiveLeagueCode={setActiveLeagueCode}/>}
-        {page==="admin"       && isAdmin  && <AdminPage users={users} saveUsers={saveUsers} leagues={leagues} saveLeagues={saveLeagues} tournaments={tournaments} updateTournament={updateTournament} picks={picks}/>}
+        {page==="picks"       && <MyPicksPage user={currentUser} leagues={leagues} saveLeagues={saveLeagues} updateLeagueInDb={updateLeagueInDb} picks={picks} savePicks={savePicks} tournaments={tournaments} activeLeagueCode={activeLeagueCode} setActiveLeagueCode={setActiveLeagueCode}/>}
+        {page==="admin"       && isAdmin  && <AdminPage users={users} saveUsers={saveUsers} leagues={leagues} saveLeagues={saveLeagues} tournaments={tournaments} updateTournament={updateTournament} picks={picks} currentUser={currentUser}/>}
       </main>
     </div></>
   );
@@ -331,7 +331,7 @@ function Header({user, isAdmin, page, setPage, onLogout}){
     {id:"standings",  label:"Standings"},
     {id:"leaderboard",label:"Leaderboard"},
     {id:"rankings",   label:"World Rankings"},
-    {id:"picks",      label:"My Picks",   hideAdmin:true},
+    {id:"picks",      label:"My Picks"},
     {id:"admin",      label:"Admin",      adminOnly:true},
   ].filter(t => t.adminOnly ? isAdmin : t.hideAdmin ? !isAdmin : true);
 
@@ -848,7 +848,7 @@ function MyPicksPage({user, leagues, saveLeagues, updateLeagueInDb, picks, saveP
 }
 
 // ─── Admin Page ───────────────────────────────────────────────────────────────
-function AdminPage({users, saveUsers, leagues, saveLeagues, tournaments, updateTournament, picks}){
+function AdminPage({users, saveUsers, leagues, saveLeagues, tournaments, updateTournament, picks, currentUser}){
   const [tab, setTab] = useState("leagues");
   const [selectedLeagueCode, setSelectedLeagueCode] = useState(leagues[0]?.code||null);
   const selectedLeague = leagues.find(l => l.code===selectedLeagueCode) || null;
@@ -867,7 +867,7 @@ function AdminPage({users, saveUsers, leagues, saveLeagues, tournaments, updateT
         ))}
       </div>
 
-      {tab==="leagues" && <LeaguesTab leagues={leagues} saveLeagues={saveLeagues} selectedLeagueCode={selectedLeagueCode} setSelectedLeagueCode={setSelectedLeagueCode} picks={picks} tournaments={tournaments} creatorUsername={users.find(u=>u.role==="admin")?.username||""}/>}
+      {tab==="leagues" && <LeaguesTab leagues={leagues} saveLeagues={saveLeagues} selectedLeagueCode={selectedLeagueCode} setSelectedLeagueCode={setSelectedLeagueCode} picks={picks} tournaments={tournaments} creatorUsername={currentUser?.username||""}/>}
       {(tab==="tournament"||tab==="livedata") && (
         leagues.length===0
           ? <div className="empty-state"><p style={{color:C.muted}}>Create a league first.</p></div>
