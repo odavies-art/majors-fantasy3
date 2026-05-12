@@ -100,10 +100,11 @@ function calcScore(picks, field, cutLine){
 }
 
 async function fetchLiveData(apiKey, majorId){
-  const res = await fetch(`https://golf-leaderboard-data.p.rapidapi.com/leaderboard/${majorId}`, {
-    headers:{"X-RapidAPI-Key":apiKey,"X-RapidAPI-Host":"golf-leaderboard-data.p.rapidapi.com"},
-  });
-  if(!res.ok) throw new Error(`API ${res.status}`);
+  const res = await fetch(`/api/golf?tournamentId=${majorId}&apiKey=${encodeURIComponent(apiKey)}`);
+  if(!res.ok){
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || `API ${res.status}`);
+  }
   const data = await res.json();
   return (data?.results?.leaderboard||[]).map((p,i) => ({
     id:p.player_id||i, name:`${p.first_name} ${p.last_name}`,
@@ -866,7 +867,7 @@ function AdminPage({users, saveUsers, leagues, saveLeagues, tournaments, updateT
         ))}
       </div>
 
-      {tab==="leagues" && <LeaguesTab leagues={leagues} saveLeagues={saveLeagues} selectedLeagueCode={selectedLeagueCode} setSelectedLeagueCode={setSelectedLeagueCode} picks={picks} tournaments={tournaments}/>}
+      {tab==="leagues" && <LeaguesTab leagues={leagues} saveLeagues={saveLeagues} selectedLeagueCode={selectedLeagueCode} setSelectedLeagueCode={setSelectedLeagueCode} picks={picks} tournaments={tournaments} creatorUsername={users.find(u=>u.role==="admin")?.username||""}/>}
       {(tab==="tournament"||tab==="livedata") && (
         leagues.length===0
           ? <div className="empty-state"><p style={{color:C.muted}}>Create a league first.</p></div>
@@ -886,14 +887,14 @@ function AdminPage({users, saveUsers, leagues, saveLeagues, tournaments, updateT
   );
 }
 
-function LeaguesTab({leagues, saveLeagues, selectedLeagueCode, setSelectedLeagueCode, picks, tournaments}){
+function LeaguesTab({leagues, saveLeagues, selectedLeagueCode, setSelectedLeagueCode, picks, tournaments, creatorUsername}){
   const [newName, setNewName] = useState("");
   const [created, setCreated] = useState(null);
 
   const createLeague = async () => {
     if(!newName.trim()) return;
     const code = genCode();
-    const league = {name:newName.trim(), code, members:[]};
+    const league = {name:newName.trim(), code, members:[creatorUsername]};
     await db.createLeague(league);
     saveLeagues([...leagues, league]);
     setSelectedLeagueCode(code);
