@@ -68,16 +68,17 @@ const MOCK_RANKINGS = [
   {rank:20,name:"Cameron Young",country:"USA",points:"6.55"},
 ];
 
+// ESPN tournament IDs — update each season from scoreboard response calendar
 const MAJORS = [
-  {id:"2",  name:"The Masters",           course:"Augusta National Golf Club"},
-  {id:"25", name:"PGA Championship",       course:"TBD"},
-  {id:"3",  name:"US Open",                course:"TBD"},
-  {id:"1",  name:"The Open Championship",  course:"TBD"},
+  {id:"401811941", name:"The Masters",           course:"Augusta National Golf Club"},
+  {id:"401811947", name:"PGA Championship",      course:"Aronimink Golf Club"},
+  {id:"401811952", name:"US Open",               course:"Oakmont Country Club"},
+  {id:"401811957", name:"The Open Championship", course:"Royal Portrush"},
 ];
 
 const DEFAULT_TOURNAMENT = {
   majorId:"",name:"",course:"",date:"",status:"upcoming",
-  currentRound:1,cutLine:null,locked:false,apiKey:"",usingMock:true,
+  currentRound:1,cutLine:null,locked:false,usingMock:true,
   lastUpdated:null,field:MOCK_FIELD,rankings:MOCK_RANKINGS,
 };
 
@@ -99,64 +100,146 @@ function calcScore(picks, field, cutLine){
   return {total, breakdown};
 }
 
-async function fetchRankings(apiKey){
-  const res = await fetch(`/api/golf?type=rankings&apiKey=${encodeURIComponent(apiKey)}`);
+// ─── ESPN leaderboard fetch (no API key needed) ───────────────────────────────
+async function fetchLiveData(majorId){
+  const res = await fetch(`/api/golf?tournamentId=${majorId}`);
   if(!res.ok){
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || `Rankings API ${res.status}`);
+    throw new Error(err.error || `ESPN API ${res.status}`);
   }
   const data = await res.json();
-  return (data?.results?.rankings||[]).map(r => ({
-    rank: r.position,
-    player_id: r.player_id,
-    name: r.player_name,
-    country: "–",
-    points: parseFloat(r.avg_points||0).toFixed(2),
-  }));
+
+  // ESPN returns competitors inside events[0].competitions[0].competitors
+  const competitors = data?.events?.[0]?.competitions?.[0]?.competitors || [];
+
+  const field = competitors.map((c, i) => {
+    const athlete = c.athlete || {};
+    const status  = c.status  || {};
+    const stats   = c.statistics || [];
+
+    // Score relative to par — ESPN stores as displayValue e.g. "-5", "E", "+2"
+    const scoreStr = c.score || "E";
+    let score = 0;
+    if(scoreStr === "E") score = 0;
+    else score = parseInt(scoreStr) || 0;
+
+    // Position
+    const posStr  = c.sortOrder || c.position?.displayName || "";
+    const pos     = parseInt(posStr) || null;
+
+    // Thru
+    const thruVal = status.thru || status.period || 0;
+    const thru    = status.type?.description === "Final" ? "F"
+                  : thruVal === 0 ? "-"
+                  : `${thruVal}`;
+
+    // Cut / WD / DQ
+    const isCut   = status.type?.name === "STATUS_MISSED_CUT"
+                 || status.type?.name === "STATUS_CUT"
+                 || c.status?.type?.name?.includes("CUT");
+    const isOut   = status.type?.name === "STATUS_WITHDRAWN"
+                 || status.type?.name === "STATUS_DQ"
+                 || isCut;
+
+    return {
+      id:        athlete.id || i,
+      name:      athlete.displayName || `Player ${i+1}`,
+      worldRank: 999, // filled in after name-matching against uploaded rankings
+      pos,
+      score,
+      thru,
+      cut: isOut,
+    };
+  });
+
+  return field;
 }
 
-async function fetchLiveData(apiKey, majorId){
-  // Fetch leaderboard and rankings in parallel
-  const [lbRes, rkRes] = await Promise.all([
-    fetch(`/api/golf?tournamentId=${majorId}&apiKey=${encodeURIComponent(apiKey)}`),
-    fetch(`/api/golf?type=rankings&apiKey=${encodeURIComponent(apiKey)}`),
-  ]);
+// ─── CSV rankings parser ──────────────────────────────────────────────────────
+// Parses OWGR CSV file. Expected columns (from owgr.com download):
+// Player Id, RANKING, LAST WEEK, END, CTRY, NAME, First Name, Last Name,
+// AVERAGE POINTS, TOTAL POINTS, EVENTS PLAYED (DIVISOR), ...
+function parseOwgrCsv(csvText){
+  const lines = csvText.trim().split("\n");
+  if(lines.length < 2) throw new Error("CSV appears empty");
 
-  if(!lbRes.ok){
-    const err = await lbRes.json().catch(() => ({}));
-    throw new Error(err.error || `Leaderboard API ${lbRes.status}`);
+  // Strip BOM if present, clean up quoted fields
+  const clean = s => s.replace(/^\uFEFF/, "").replace(/^"|"$/g, "").trim();
+
+  const headers = lines[0].split(",").map(clean).map(h => h.toUpperCase());
+  const rankIdx    = headers.indexOf("RANKING");
+  const nameIdx    = headers.indexOf("NAME");
+  const firstIdx   = headers.indexOf("FIRST NAME");
+  const lastIdx    = headers.indexOf("LAST NAME");
+  const ctryIdx    = headers.indexOf("CTRY");
+  const ptsIdx     = headers.indexOf("AVERAGE POINTS");
+
+  if(rankIdx === -1 || (nameIdx === -1 && firstIdx === -1)){
+    throw new Error("CSV missing expected columns (RANKING, NAME). Check the file format.");
   }
 
-  const lbData = await lbRes.json();
-  const rkData = rkRes.ok ? await rkRes.json() : null;
+  const rankings = [];
+  for(let i = 1; i < lines.length; i++){
+    const line = lines[i];
+    if(!line.trim()) continue;
 
-  // Build a player_id → world rank lookup from rankings
-  const rankMap = {};
-  if(rkData?.results?.rankings){
-    rkData.results.rankings.forEach(r => { rankMap[r.player_id] = r.position; });
+    // Handle quoted fields with commas inside
+    const cols = [];
+    let inQ = false, cur = "";
+    for(const ch of line){
+      if(ch === '"'){ inQ = !inQ; }
+      else if(ch === "," && !inQ){ cols.push(cur); cur = ""; }
+      else cur += ch;
+    }
+    cols.push(cur);
+
+    const cleanCol = idx => (cols[idx] || "").replace(/^"|"$/g, "").trim();
+
+    const rankStr = cleanCol(rankIdx);
+    const rank    = parseInt(rankStr);
+    if(!rank || isNaN(rank)) continue; // skip unranked rows
+
+    // Build full name — prefer NAME column, fall back to First + Last
+    let name = nameIdx >= 0 ? cleanCol(nameIdx) : "";
+    if(!name && firstIdx >= 0 && lastIdx >= 0){
+      name = `${cleanCol(firstIdx)} ${cleanCol(lastIdx)}`.trim();
+    }
+    if(!name) continue;
+
+    const country = ctryIdx >= 0 ? cleanCol(ctryIdx) : "";
+    const ptsRaw  = ptsIdx  >= 0 ? cleanCol(ptsIdx)  : "-";
+    const points  = ptsRaw === "-" ? "0.00" : parseFloat(ptsRaw).toFixed(2);
+
+    rankings.push({ rank, name, country, points });
+
+    // Only need top 300 for the top-10 rule (with some buffer)
+    if(rank > 300) break;
   }
 
-  const field = (lbData?.results?.leaderboard||[]).map((p,i) => ({
-    id: p.player_id||i,
-    name: `${p.first_name} ${p.last_name}`,
-    worldRank: rankMap[p.player_id] || 999,
-    pos: p.position && p.position > 0 ? p.position : null,
-    score: typeof p.total_to_par==="number" ? p.total_to_par : parseInt(p.total_to_par)||0,
-    thru: p.holes_played===18 ? "F" : p.holes_played===0 ? "-" : `${p.holes_played}`,
-    cut: p.status==="cut" || p.status==="dq" || p.status==="wd",
-  }));
+  if(rankings.length === 0) throw new Error("No ranked players found in CSV.");
+  return rankings;
+}
 
-  // Also return the full rankings list for the World Rankings page
-  const rankings = rkData?.results?.rankings
-    ? rkData.results.rankings.slice(0,100).map(r => ({
-        rank: r.position,
-        name: r.player_name,
-        country: "–",
-        points: parseFloat(r.avg_points||0).toFixed(2),
-      }))
-    : null;
+// Match ESPN player names to OWGR names (fuzzy — handles accents, Jr., etc.)
+function normaliseName(n){
+  return n.toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // strip accents
+    .replace(/\bjr\.?\b|\bsr\.?\b|\biii?\b|\bii\b/g, "") // strip suffixes
+    .replace(/[^a-z\s]/g, "").replace(/\s+/g, " ").trim();
+}
 
-  return { field, rankings };
+function buildRankLookup(rankings){
+  const map = {};
+  rankings.forEach(r => { map[normaliseName(r.name)] = r.rank; });
+  return map;
+}
+
+function applyRankings(field, rankings){
+  const lookup = buildRankLookup(rankings);
+  return field.map(p => {
+    const rank = lookup[normaliseName(p.name)] || 999;
+    return {...p, worldRank: rank};
+  });
 }
 
 // ─── Supabase DB helpers ──────────────────────────────────────────────────────
@@ -185,7 +268,6 @@ function tournamentToDb(code, t){
     current_round: t.currentRound||1,
     cut_line: t.cutLine||null,
     locked: t.locked||false,
-    api_key: t.apiKey||"",
     using_mock: t.usingMock!==false,
     last_updated: t.lastUpdated||null,
     field: t.field||MOCK_FIELD,
@@ -204,7 +286,6 @@ function tournamentFromDb(row){
     currentRound: row.current_round||1,
     cutLine: row.cut_line||null,
     locked: row.locked||false,
-    apiKey: row.api_key||"",
     usingMock: row.using_mock!==false,
     lastUpdated: row.last_updated||null,
     field: row.field||MOCK_FIELD,
@@ -1078,41 +1159,26 @@ function TournamentSetup({league, tournament, onSave}){
 }
 
 function LiveDataPanel({league, tournament, onSave}){
-  const [apiKey,  setApiKey]  = useState(tournament.apiKey||"");
-  const [loading, setLoading] = useState(false);
-  const [error,   setError]   = useState("");
-  const [msg,     setMsg]     = useState("");
+  const [loading,     setLoading]     = useState(false);
+  const [error,       setError]       = useState("");
+  const [msg,         setMsg]         = useState("");
+  const [csvError,    setCsvError]    = useState("");
+  const [csvMsg,      setCsvMsg]      = useState("");
+  const [csvLoading,  setCsvLoading]  = useState(false);
 
-  const saveKey = async () => {
-    await onSave({...tournament, apiKey, usingMock:!apiKey});
-    setMsg("Key saved."); setTimeout(() => setMsg(""), 2000);
-  };
+  // ── Fetch live leaderboard from ESPN (no key needed) ──
   const refresh = async () => {
-    if(!apiKey){ setError("Paste your API key first."); return; }
     if(!tournament.majorId){ setError("Select a major in Tournament Setup first."); return; }
     setLoading(true); setError(""); setMsg("");
     try {
-      const result = await fetchLiveData(apiKey, tournament.majorId);
-      const updates = {
-        ...tournament, apiKey, usingMock:false,
-        field: result.field,
-        lastUpdated: new Date().toISOString(),
-      };
-      if(result.rankings) updates.rankings = result.rankings;
-      await onSave(updates);
-      const rkNote = result.rankings ? ` + top ${result.rankings.length} world rankings` : "";
-      setMsg(`✓ ${result.field.length} golfers loaded${rkNote}.`);
-    } catch(e){ setError(`Failed: ${e.message}`); }
-    setLoading(false);
-  };
-
-  const refreshRankings = async () => {
-    if(!apiKey){ setError("Paste your API key first."); return; }
-    setLoading(true); setError(""); setMsg("");
-    try {
-      const rankings = await fetchRankings(apiKey);
-      await onSave({...tournament, apiKey, rankings, lastUpdated:new Date().toISOString()});
-      setMsg(`✓ ${rankings.length} world rankings loaded.`);
+      let field = await fetchLiveData(tournament.majorId);
+      // If we have rankings stored, apply them immediately
+      if(tournament.rankings?.length){
+        field = applyRankings(field, tournament.rankings);
+      }
+      await onSave({...tournament, usingMock:false, field, lastUpdated:new Date().toISOString()});
+      const top10inField = field.filter(p => p.worldRank <= 10).length;
+      setMsg(`✓ ${field.length} golfers loaded. ${top10inField} world top-10 players in field.`);
     } catch(e){ setError(`Failed: ${e.message}`); }
     setLoading(false);
   };
@@ -1122,11 +1188,32 @@ function LiveDataPanel({league, tournament, onSave}){
     setMsg("Using mock data."); setTimeout(() => setMsg(""), 2000);
   };
 
+  // ── CSV upload for OWGR rankings ──
+  const handleCsvUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if(!file) return;
+    setCsvLoading(true); setCsvError(""); setCsvMsg("");
+    try {
+      const text = await file.text();
+      const rankings = parseOwgrCsv(text);
+      // Re-apply rankings to current field if we have one
+      let field = tournament.field || MOCK_FIELD;
+      if(!tournament.usingMock){
+        field = applyRankings(field, rankings);
+      }
+      await onSave({...tournament, rankings, field, lastUpdated:new Date().toISOString()});
+      const top10 = rankings.filter(r => r.rank <= 10);
+      setCsvMsg(`✓ ${rankings.length} rankings loaded (top 10: ${top10.map(r => r.name.split(" ").pop()).join(", ")})`);
+    } catch(e){ setCsvError(`Failed: ${e.message}`); }
+    setCsvLoading(false);
+    e.target.value = ""; // reset file input
+  };
+
   const stats = [
-    {label:"Data source",  value:tournament.usingMock?"Mock":"Live API"},
-    {label:"Golfers",      value:(tournament.field||MOCK_FIELD).length},
-    {label:"Last updated", value:tournament.lastUpdated?new Date(tournament.lastUpdated).toLocaleTimeString():"Never"},
-    {label:"Auto-refresh", value:tournament.apiKey&&tournament.status==="in_progress"&&!tournament.usingMock?"Every 3 min":"Off"},
+    {label:"Data source",   value:tournament.usingMock ? "Mock" : "Live ESPN"},
+    {label:"Golfers",       value:(tournament.field||MOCK_FIELD).length},
+    {label:"Rankings",      value:tournament.rankings?.length ? `Top ${tournament.rankings.length}` : "Not uploaded"},
+    {label:"Last updated",  value:tournament.lastUpdated ? new Date(tournament.lastUpdated).toLocaleTimeString() : "Never"},
   ];
 
   return (
@@ -1135,40 +1222,55 @@ function LiveDataPanel({league, tournament, onSave}){
         {stats.map(s => (
           <div key={s.label} style={{background:C.card, border:`1px solid ${C.border}`, borderRadius:10, padding:"12px 16px"}}>
             <div style={{fontSize:11, color:C.muted, textTransform:"uppercase", letterSpacing:".6px", marginBottom:6}}>{s.label}</div>
-            <div style={{fontSize:16, fontWeight:600, color:C.accent}}>{s.value}</div>
+            <div style={{fontSize:15, fontWeight:600, color:C.accent}}>{s.value}</div>
           </div>
         ))}
       </div>
-      <div className="card" style={{marginBottom:16}}>
-        <div style={{fontWeight:600, color:"#f0fff0", marginBottom:6}}>RapidAPI Key</div>
-        <p style={{fontSize:13, color:C.muted, marginBottom:14, lineHeight:1.65}}>
-          One key covers live scores + world rankings. Go to <strong style={{color:"#f0fff0"}}>rapidapi.com</strong> → search <strong style={{color:"#f0fff0"}}>"Golf Leaderboard Data"</strong> → subscribe (free) → copy your <code style={{background:C.surface, padding:"1px 6px", borderRadius:4, fontSize:12}}>X-RapidAPI-Key</code>.
-        </p>
-        <div style={{display:"flex", gap:10}}>
-          <input type="password" placeholder="Paste RapidAPI key…" value={apiKey} onChange={e => setApiKey(e.target.value)} style={{flex:1}}/>
-          <button className="btn-primary" style={{whiteSpace:"nowrap", flexShrink:0}} onClick={saveKey}>Save Key</button>
-        </div>
-        {msg   && <p style={{color:C.accent,  fontSize:13, marginTop:10}}>✓ {msg}</p>}
-        {error && <p style={{color:C.danger,  fontSize:13, marginTop:10}}>⚠ {error}</p>}
-      </div>
+
+      {/* Live scores */}
       <div className="card" style={{marginBottom:16}}>
         <div style={{fontWeight:600, color:"#f0fff0", marginBottom:6}}>Fetch Live Scores</div>
         <p style={{fontSize:13, color:C.muted, marginBottom:14, lineHeight:1.65}}>
-          Fetches the tournament leaderboard <strong style={{color:"#f0fff0"}}>and</strong> world rankings in one call — world ranks are matched to each golfer automatically to enforce the top-10 rule. Auto-refreshes every 3 minutes when a key is saved and tournament is In Progress.
+          Pulls the live leaderboard from <strong style={{color:"#f0fff0"}}>ESPN</strong> — no API key needed.
+          World rankings are cross-referenced automatically from your uploaded OWGR file.
+          Refresh every 30 mins during the tournament, or as often as you like.
         </p>
+        {msg   && <p style={{color:C.accent,  fontSize:13, marginBottom:10}}>✓ {msg}</p>}
+        {error && <p style={{color:C.danger,  fontSize:13, marginBottom:10}}>⚠ {error}</p>}
         <div style={{display:"flex", gap:10}}>
-          <button className="btn-primary" onClick={refresh} disabled={loading||!apiKey}>{loading?"Fetching…":"Fetch Scores + Rankings"}</button>
+          <button className="btn-primary" onClick={refresh} disabled={loading}>
+            {loading ? "Fetching…" : "Fetch Live Scores"}
+          </button>
           <button className="btn-secondary" onClick={useMock}>Use Mock Data</button>
         </div>
       </div>
+
+      {/* OWGR CSV upload */}
       <div className="card">
-        <div style={{fontWeight:600, color:"#f0fff0", marginBottom:6}}>Refresh World Rankings Only</div>
-        <p style={{fontSize:13, color:C.muted, marginBottom:14, lineHeight:1.65}}>
-          Updates the World Rankings page without re-fetching tournament scores. Useful before the tournament starts when picks are still open.
+        <div style={{fontWeight:600, color:"#f0fff0", marginBottom:6}}>Upload World Rankings (OWGR)</div>
+        <p style={{fontSize:13, color:C.muted, marginBottom:6, lineHeight:1.65}}>
+          Upload once before each major — rankings are used to enforce the <strong style={{color:"#f0fff0"}}>max 2 top-10 players</strong> rule and display the World Rankings page.
         </p>
-        <div style={{display:"flex", gap:10}}>
-          <button className="btn-secondary" onClick={refreshRankings} disabled={loading||!apiKey}>{loading?"Fetching…":"Fetch World Rankings"}</button>
+        <div style={{background:C.surface, border:`1px solid ${C.border}`, borderRadius:8, padding:"10px 14px", marginBottom:14, fontSize:12, color:"#60a5fa", lineHeight:1.7}}>
+          <strong>How to download:</strong> Go to <strong>owgr.com</strong> → Rankings → Download (CSV/Excel). The file is updated every Monday after a tournament.
         </div>
+        {csvMsg   && <p style={{color:C.accent, fontSize:13, marginBottom:10}}>✓ {csvMsg}</p>}
+        {csvError && <p style={{color:C.danger, fontSize:13, marginBottom:10}}>⚠ {csvError}</p>}
+        <label style={{
+          display:"inline-block", cursor:"pointer",
+          background:C.card, color:"#f0fff0",
+          padding:"10px 18px", borderRadius:8,
+          border:`1px solid #4a6a4a`, fontSize:14, fontWeight:500,
+          opacity: csvLoading ? 0.5 : 1,
+        }}>
+          {csvLoading ? "Processing…" : "📂 Choose OWGR CSV file"}
+          <input type="file" accept=".csv,.xlsx,.xls" style={{display:"none"}} onChange={handleCsvUpload} disabled={csvLoading}/>
+        </label>
+        {tournament.rankings?.length > 0 && (
+          <div style={{marginTop:12, fontSize:12, color:C.muted}}>
+            Current: {tournament.rankings.length} players ranked · Top 10: {tournament.rankings.filter(r=>r.rank<=10).map(r=>r.name.split(" ").pop()).join(", ")}
+          </div>
+        )}
       </div>
     </div>
   );
