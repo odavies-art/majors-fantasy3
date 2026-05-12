@@ -248,7 +248,7 @@ export default function App(){
       dbTournaments.forEach(row => { tMap[row.league_code] = tournamentFromDb(row); });
       setTournaments(tMap);
       const pMap = {};
-      dbPicks.forEach(row => { pMap[row.pick_key] = {mains: row.mains||[], tiebreakers: row.tiebreakers||}; });
+      dbPicks.forEach(row => { pMap[row.pick_key] = {mains: row.mains||[], tiebreakers: row.tiebreakers||[]}; });
       setPicks(pMap);
       setLoading(false);
     }
