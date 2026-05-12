@@ -267,15 +267,20 @@ function tournamentToDb(code, t){
     current_round: t.currentRound||1,
     cut_line: t.cutLine||null,
     locked: t.locked||false,
-    using_mock: t.usingMock!==false,
+    using_mock: t.usingMock===true,
     last_updated: t.lastUpdated||null,
-    field: t.field||MOCK_FIELD,
-    rankings: t.rankings||MOCK_RANKINGS,
+    field: t.field||[],
+    rankings: t.rankings||[],
   };
 }
 
 function tournamentFromDb(row){
   if(!row) return DEFAULT_TOURNAMENT;
+  const rankings = row.rankings || [];
+  const field    = row.field    || [];
+  // Auto-correct: if real rankings or field data exists, usingMock should be false
+  const hasRealData = rankings.length > 0 || field.length > 0;
+  const usingMock = hasRealData ? false : row.using_mock === true;
   return {
     majorId: row.major_id||"",
     name: row.name||"",
@@ -285,10 +290,10 @@ function tournamentFromDb(row){
     currentRound: row.current_round||1,
     cutLine: row.cut_line||null,
     locked: row.locked||false,
-    usingMock: row.using_mock!==false,
+    usingMock,
     lastUpdated: row.last_updated||null,
-    field: row.field||MOCK_FIELD,
-    rankings: row.rankings||MOCK_RANKINGS,
+    field,
+    rankings,
   };
 }
 
@@ -1297,11 +1302,10 @@ function LiveDataPanel({league, tournament, onSave}){
   };
 
   const useMock = async () => {
-    await onSave({...tournament, usingMock:true, field:MOCK_FIELD, rankings:MOCK_RANKINGS, lastUpdated:new Date().toISOString()});
-    setMsg("Using mock data."); setTimeout(() => setMsg(""), 2000);
+    await onSave({...tournament, usingMock:true, field:[], lastUpdated:new Date().toISOString()});
+    setMsg("Switched to mock/empty state."); setTimeout(() => setMsg(""), 2000);
   };
 
-  // ── CSV upload for OWGR rankings ──
   const handleCsvUpload = async (e) => {
     const file = e.target.files?.[0];
     if(!file) return;
@@ -1309,17 +1313,22 @@ function LiveDataPanel({league, tournament, onSave}){
     try {
       const text = await file.text();
       const rankings = parseOwgrCsv(text);
-      // Re-apply rankings to current field if we have one
-      let field = tournament.field || MOCK_FIELD;
-      if(!tournament.usingMock){
-        field = applyRankings(field, rankings);
-      }
-      await onSave({...tournament, rankings, field, lastUpdated:new Date().toISOString()});
+      // Keep existing live field if present, re-apply new rankings to it
+      const existingField = (tournament.field||[]).length > 0 && !tournament.usingMock
+        ? applyRankings(tournament.field, rankings)
+        : [];
+      await onSave({
+        ...tournament,
+        rankings,
+        field: existingField,
+        usingMock: false,
+        lastUpdated: new Date().toISOString(),
+      });
       const top10 = rankings.filter(r => r.rank <= 10);
-      setCsvMsg(`✓ ${rankings.length} rankings loaded (top 10: ${top10.map(r => r.name.split(" ").pop()).join(", ")})`);
+      setCsvMsg(`✓ ${rankings.length} rankings loaded. Top 10: ${top10.slice(0,5).map(r => r.name.split(" ").pop()).join(", ")}…`);
     } catch(e){ setCsvError(`Failed: ${e.message}`); }
     setCsvLoading(false);
-    e.target.value = ""; // reset file input
+    e.target.value = "";
   };
 
   const stats = [
