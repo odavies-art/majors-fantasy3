@@ -69,10 +69,10 @@ const MOCK_RANKINGS = [
 ];
 
 const MAJORS = [
-  {id:"masters",name:"The Masters",course:"Augusta National Golf Club"},
-  {id:"pga",name:"PGA Championship",course:"TBD"},
-  {id:"us_open",name:"US Open",course:"TBD"},
-  {id:"open",name:"The Open Championship",course:"TBD"},
+  {id:"2",  name:"The Masters",           course:"Augusta National Golf Club"},
+  {id:"25", name:"PGA Championship",       course:"TBD"},
+  {id:"3",  name:"US Open",                course:"TBD"},
+  {id:"1",  name:"The Open Championship",  course:"TBD"},
 ];
 
 const DEFAULT_TOURNAMENT = {
@@ -99,18 +99,64 @@ function calcScore(picks, field, cutLine){
   return {total, breakdown};
 }
 
-async function fetchLiveData(apiKey, majorId){
-  const res = await fetch(`/api/golf?tournamentId=${majorId}&apiKey=${encodeURIComponent(apiKey)}`);
+async function fetchRankings(apiKey){
+  const res = await fetch(`/api/golf?type=rankings&apiKey=${encodeURIComponent(apiKey)}`);
   if(!res.ok){
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || `API ${res.status}`);
+    throw new Error(err.error || `Rankings API ${res.status}`);
   }
   const data = await res.json();
-  return (data?.results?.leaderboard||[]).map((p,i) => ({
-    id:p.player_id||i, name:`${p.first_name} ${p.last_name}`,
-    worldRank:p.world_ranking||999, pos:p.position?parseInt(p.position):null,
-    score:p.total_to_par||0, thru:p.thru||"–", cut:p.status==="cut",
+  return (data?.results?.rankings||[]).map(r => ({
+    rank: r.position,
+    player_id: r.player_id,
+    name: r.player_name,
+    country: "–",
+    points: parseFloat(r.avg_points||0).toFixed(2),
   }));
+}
+
+async function fetchLiveData(apiKey, majorId){
+  // Fetch leaderboard and rankings in parallel
+  const [lbRes, rkRes] = await Promise.all([
+    fetch(`/api/golf?tournamentId=${majorId}&apiKey=${encodeURIComponent(apiKey)}`),
+    fetch(`/api/golf?type=rankings&apiKey=${encodeURIComponent(apiKey)}`),
+  ]);
+
+  if(!lbRes.ok){
+    const err = await lbRes.json().catch(() => ({}));
+    throw new Error(err.error || `Leaderboard API ${lbRes.status}`);
+  }
+
+  const lbData = await lbRes.json();
+  const rkData = rkRes.ok ? await rkRes.json() : null;
+
+  // Build a player_id → world rank lookup from rankings
+  const rankMap = {};
+  if(rkData?.results?.rankings){
+    rkData.results.rankings.forEach(r => { rankMap[r.player_id] = r.position; });
+  }
+
+  const field = (lbData?.results?.leaderboard||[]).map((p,i) => ({
+    id: p.player_id||i,
+    name: `${p.first_name} ${p.last_name}`,
+    worldRank: rankMap[p.player_id] || 999,
+    pos: p.position && p.position > 0 ? p.position : null,
+    score: typeof p.total_to_par==="number" ? p.total_to_par : parseInt(p.total_to_par)||0,
+    thru: p.holes_played===18 ? "F" : p.holes_played===0 ? "-" : `${p.holes_played}`,
+    cut: p.status==="cut" || p.status==="dq" || p.status==="wd",
+  }));
+
+  // Also return the full rankings list for the World Rankings page
+  const rankings = rkData?.results?.rankings
+    ? rkData.results.rankings.slice(0,100).map(r => ({
+        rank: r.position,
+        name: r.player_name,
+        country: "–",
+        points: parseFloat(r.avg_points||0).toFixed(2),
+      }))
+    : null;
+
+  return { field, rankings };
 }
 
 // ─── Supabase DB helpers ──────────────────────────────────────────────────────
@@ -1046,12 +1092,31 @@ function LiveDataPanel({league, tournament, onSave}){
     if(!tournament.majorId){ setError("Select a major in Tournament Setup first."); return; }
     setLoading(true); setError(""); setMsg("");
     try {
-      const lf = await fetchLiveData(apiKey, tournament.majorId);
-      await onSave({...tournament, apiKey, usingMock:false, field:lf, lastUpdated:new Date().toISOString()});
-      setMsg(`✓ ${lf.length} golfers loaded. World rankings included.`);
+      const result = await fetchLiveData(apiKey, tournament.majorId);
+      const updates = {
+        ...tournament, apiKey, usingMock:false,
+        field: result.field,
+        lastUpdated: new Date().toISOString(),
+      };
+      if(result.rankings) updates.rankings = result.rankings;
+      await onSave(updates);
+      const rkNote = result.rankings ? ` + top ${result.rankings.length} world rankings` : "";
+      setMsg(`✓ ${result.field.length} golfers loaded${rkNote}.`);
     } catch(e){ setError(`Failed: ${e.message}`); }
     setLoading(false);
   };
+
+  const refreshRankings = async () => {
+    if(!apiKey){ setError("Paste your API key first."); return; }
+    setLoading(true); setError(""); setMsg("");
+    try {
+      const rankings = await fetchRankings(apiKey);
+      await onSave({...tournament, apiKey, rankings, lastUpdated:new Date().toISOString()});
+      setMsg(`✓ ${rankings.length} world rankings loaded.`);
+    } catch(e){ setError(`Failed: ${e.message}`); }
+    setLoading(false);
+  };
+
   const useMock = async () => {
     await onSave({...tournament, usingMock:true, field:MOCK_FIELD, rankings:MOCK_RANKINGS, lastUpdated:new Date().toISOString()});
     setMsg("Using mock data."); setTimeout(() => setMsg(""), 2000);
@@ -1086,12 +1151,23 @@ function LiveDataPanel({league, tournament, onSave}){
         {msg   && <p style={{color:C.accent,  fontSize:13, marginTop:10}}>✓ {msg}</p>}
         {error && <p style={{color:C.danger,  fontSize:13, marginTop:10}}>⚠ {error}</p>}
       </div>
-      <div className="card">
-        <div style={{fontWeight:600, color:"#f0fff0", marginBottom:6}}>Refresh Scores</div>
-        <p style={{fontSize:13, color:C.muted, marginBottom:14, lineHeight:1.65}}>Auto-refreshes every 3 minutes when a key is saved and tournament is In Progress.</p>
+      <div className="card" style={{marginBottom:16}}>
+        <div style={{fontWeight:600, color:"#f0fff0", marginBottom:6}}>Fetch Live Scores</div>
+        <p style={{fontSize:13, color:C.muted, marginBottom:14, lineHeight:1.65}}>
+          Fetches the tournament leaderboard <strong style={{color:"#f0fff0"}}>and</strong> world rankings in one call — world ranks are matched to each golfer automatically to enforce the top-10 rule. Auto-refreshes every 3 minutes when a key is saved and tournament is In Progress.
+        </p>
         <div style={{display:"flex", gap:10}}>
-          <button className="btn-primary" onClick={refresh} disabled={loading||!apiKey}>{loading?"Fetching…":"Fetch Live Data Now"}</button>
+          <button className="btn-primary" onClick={refresh} disabled={loading||!apiKey}>{loading?"Fetching…":"Fetch Scores + Rankings"}</button>
           <button className="btn-secondary" onClick={useMock}>Use Mock Data</button>
+        </div>
+      </div>
+      <div className="card">
+        <div style={{fontWeight:600, color:"#f0fff0", marginBottom:6}}>Refresh World Rankings Only</div>
+        <p style={{fontSize:13, color:C.muted, marginBottom:14, lineHeight:1.65}}>
+          Updates the World Rankings page without re-fetching tournament scores. Useful before the tournament starts when picks are still open.
+        </p>
+        <div style={{display:"flex", gap:10}}>
+          <button className="btn-secondary" onClick={refreshRankings} disabled={loading||!apiKey}>{loading?"Fetching…":"Fetch World Rankings"}</button>
         </div>
       </div>
     </div>
