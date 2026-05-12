@@ -35,9 +35,18 @@ const db = {
 
   async getTournaments(){ const {data} = await supabase.from("tournaments").select("*"); return data||[]; },
   async upsertTournament(t){
-    console.log("upsertTournament payload:", JSON.stringify(t, null, 2));
-    const {error} = await supabase.from("tournaments").upsert(t, {onConflict:"league_code"});
-    if(error) throw new Error(`Tournament save failed: ${error.message}`);
+    // Try update first, then insert if no row exists
+    const {data: existing} = await supabase
+      .from("tournaments").select("id").eq("league_code", t.league_code).maybeSingle();
+    if(existing){
+      const {error} = await supabase
+        .from("tournaments").update(t).eq("league_code", t.league_code);
+      if(error) throw new Error(`Tournament update failed: ${error.message}`);
+    } else {
+      const {error} = await supabase
+        .from("tournaments").insert(t);
+      if(error) throw new Error(`Tournament insert failed: ${error.message}`);
+    }
   },
 
   async getPicks(){ const {data} = await supabase.from("picks").select("*"); return data||[]; },
@@ -52,12 +61,15 @@ const db = {
     return data||[];
   },
   async saveRankings(rows){
-    const {error: delError} = await supabase.from("rankings").delete().gte("rank", 0);
+    // Delete existing rows then insert fresh
+    const {error: delError} = await supabase
+      .from("rankings").delete().not("rank", "is", null);
     if(delError) throw new Error(`Rankings delete failed: ${delError.message}`);
     if(rows.length === 0) return;
     for(let i = 0; i < rows.length; i += 500){
-      const {error: insError} = await supabase.from("rankings").insert(rows.slice(i, i + 500));
-      if(insError) throw new Error(`Rankings insert failed: ${insError.message}`);
+      const {error: insError} = await supabase
+        .from("rankings").insert(rows.slice(i, i + 500));
+      if(insError) throw new Error(`Rankings insert failed (batch ${i/500+1}): ${insError.message}`);
     }
   },
 };
