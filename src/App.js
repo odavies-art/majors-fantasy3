@@ -41,11 +41,11 @@ const db = {
     if(existing){
       const {error} = await supabase
         .from("tournaments").update(t).eq("league_code", t.league_code);
-      if(error) throw new Error(`Tournament update failed: ${error.message}`);
+      if(error) { alert("UPDATE ERROR: " + error.message); throw new Error(`Tournament update failed: ${error.message}`); }
     } else {
       const {error} = await supabase
         .from("tournaments").insert(t);
-      if(error) throw new Error(`Tournament insert failed: ${error.message}`);
+      if(error) { alert("INSERT ERROR: " + error.message); throw new Error(`Tournament insert failed: ${error.message}`); }
     }
   },
 
