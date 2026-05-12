@@ -35,6 +35,7 @@ const db = {
 
   async getTournaments(){ const {data} = await supabase.from("tournaments").select("*"); return data||[]; },
   async upsertTournament(t){
+    console.log("upsertTournament payload:", JSON.stringify(t, null, 2));
     const {error} = await supabase.from("tournaments").upsert(t, {onConflict:"league_code"});
     if(error) throw new Error(`Tournament save failed: ${error.message}`);
   },
