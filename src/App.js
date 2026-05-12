@@ -6,69 +6,8 @@ const supabase = createClient(
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFtbnVsZ210em50eHJkemNxbnBiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1ODU5NDcsImV4cCI6MjA5NDE2MTk0N30.cfyVVLK1Ky73YmeyET-jy0z2cw2K029QTacPUgVpXsg"
 );
 
-// ─── Mock data ────────────────────────────────────────────────────────────────
-const MOCK_FIELD = [
-  {id:1,name:"Scottie Scheffler",worldRank:1,pos:1,score:-18,thru:"F",cut:false},
-  {id:2,name:"Rory McIlroy",worldRank:2,pos:2,score:-14,thru:"F",cut:false},
-  {id:3,name:"Xander Schauffele",worldRank:3,pos:3,score:-13,thru:"F",cut:false},
-  {id:4,name:"Collin Morikawa",worldRank:4,pos:4,score:-12,thru:"F",cut:false},
-  {id:5,name:"Viktor Hovland",worldRank:5,pos:5,score:-11,thru:"F",cut:false},
-  {id:6,name:"Patrick Cantlay",worldRank:6,pos:6,score:-10,thru:"F",cut:false},
-  {id:7,name:"Wyndham Clark",worldRank:7,pos:7,score:-9,thru:"F",cut:false},
-  {id:8,name:"Jon Rahm",worldRank:8,pos:8,score:-8,thru:"F",cut:false},
-  {id:9,name:"Brian Harman",worldRank:9,pos:9,score:-7,thru:"F",cut:false},
-  {id:10,name:"Ludvig Åberg",worldRank:10,pos:10,score:-6,thru:"F",cut:false},
-  {id:11,name:"Tony Finau",worldRank:15,pos:11,score:-5,thru:"F",cut:false},
-  {id:12,name:"Shane Lowry",worldRank:18,pos:12,score:-5,thru:"F",cut:false},
-  {id:13,name:"Tommy Fleetwood",worldRank:14,pos:13,score:-4,thru:"F",cut:false},
-  {id:14,name:"Justin Thomas",worldRank:20,pos:14,score:-4,thru:"F",cut:false},
-  {id:15,name:"Max Homa",worldRank:12,pos:15,score:-3,thru:"F",cut:false},
-  {id:16,name:"Russell Henley",worldRank:22,pos:16,score:-3,thru:"F",cut:false},
-  {id:17,name:"Adam Scott",worldRank:30,pos:17,score:-2,thru:"F",cut:false},
-  {id:18,name:"Hideki Matsuyama",worldRank:16,pos:18,score:-2,thru:"F",cut:false},
-  {id:19,name:"Matt Fitzpatrick",worldRank:11,pos:19,score:-1,thru:"F",cut:false},
-  {id:20,name:"Cameron Young",worldRank:25,pos:20,score:-1,thru:"F",cut:false},
-  {id:21,name:"Sahith Theegala",worldRank:19,pos:21,score:0,thru:"F",cut:false},
-  {id:22,name:"Tom Kim",worldRank:23,pos:22,score:0,thru:"F",cut:false},
-  {id:23,name:"Keegan Bradley",worldRank:35,pos:23,score:1,thru:"F",cut:false},
-  {id:24,name:"Jordan Spieth",worldRank:28,pos:24,score:1,thru:"F",cut:false},
-  {id:25,name:"Billy Horschel",worldRank:40,pos:25,score:2,thru:"F",cut:false},
-  {id:26,name:"Sungjae Im",worldRank:32,pos:27,score:3,thru:"F",cut:false},
-  {id:27,name:"Sepp Straka",worldRank:38,pos:28,score:3,thru:"F",cut:false},
-  {id:28,name:"Jason Day",worldRank:60,pos:32,score:5,thru:"F",cut:false},
-  {id:29,name:"Harris English",worldRank:65,pos:33,score:6,thru:"F",cut:false},
-  {id:30,name:"Phil Mickelson",worldRank:110,pos:43,score:11,thru:"F",cut:false},
-  {id:31,name:"Tiger Woods",worldRank:120,pos:45,score:12,thru:"F",cut:false},
-  {id:32,name:"Rickie Fowler",worldRank:55,pos:44,score:11,thru:"F",cut:false},
-  {id:33,name:"Ernie Els",worldRank:300,pos:null,score:999,thru:"MC",cut:true},
-  {id:34,name:"Vijay Singh",worldRank:400,pos:null,score:999,thru:"MC",cut:true},
-  {id:35,name:"Lee Westwood",worldRank:350,pos:null,score:999,thru:"MC",cut:true},
-];
-
-const MOCK_RANKINGS = [
-  {rank:1,name:"Scottie Scheffler",country:"USA",points:"24.15"},
-  {rank:2,name:"Rory McIlroy",country:"NIR",points:"13.82"},
-  {rank:3,name:"Xander Schauffele",country:"USA",points:"12.44"},
-  {rank:4,name:"Collin Morikawa",country:"USA",points:"11.98"},
-  {rank:5,name:"Viktor Hovland",country:"NOR",points:"11.23"},
-  {rank:6,name:"Patrick Cantlay",country:"USA",points:"10.67"},
-  {rank:7,name:"Wyndham Clark",country:"USA",points:"9.88"},
-  {rank:8,name:"Jon Rahm",country:"ESP",points:"9.54"},
-  {rank:9,name:"Brian Harman",country:"USA",points:"9.01"},
-  {rank:10,name:"Ludvig Åberg",country:"SWE",points:"8.77"},
-  {rank:11,name:"Matt Fitzpatrick",country:"ENG",points:"8.33"},
-  {rank:12,name:"Max Homa",country:"USA",points:"8.12"},
-  {rank:13,name:"Tommy Fleetwood",country:"ENG",points:"7.95"},
-  {rank:14,name:"Tony Finau",country:"USA",points:"7.66"},
-  {rank:15,name:"Shane Lowry",country:"IRL",points:"7.44"},
-  {rank:16,name:"Hideki Matsuyama",country:"JPN",points:"7.21"},
-  {rank:17,name:"Justin Thomas",country:"USA",points:"7.05"},
-  {rank:18,name:"Sahith Theegala",country:"USA",points:"6.88"},
-  {rank:19,name:"Tom Kim",country:"KOR",points:"6.71"},
-  {rank:20,name:"Cameron Young",country:"USA",points:"6.55"},
-];
-
-// ESPN tournament IDs — update each season from scoreboard response calendar
+// ─── Constants ────────────────────────────────────────────────────────────────
+// ESPN tournament IDs for 2026 season — update each season
 const MAJORS = [
   {id:"401811941", name:"The Masters",           course:"Augusta National Golf Club"},
   {id:"401811947", name:"PGA Championship",      course:"Aronimink Golf Club"},
@@ -77,153 +16,86 @@ const MAJORS = [
 ];
 
 const DEFAULT_TOURNAMENT = {
-  majorId:"",name:"",course:"",date:"",status:"upcoming",
-  currentRound:1,cutLine:null,locked:false,usingMock:true,
-  lastUpdated:null,field:MOCK_FIELD,rankings:MOCK_RANKINGS,
+  majorId:"", name:"", course:"", date:"", status:"upcoming",
+  currentRound:1, cutLine:null, locked:false, lastUpdated:null, field:[],
 };
+
+// ─── Supabase DB helpers ──────────────────────────────────────────────────────
+// Rankings live in their own table — shared across all leagues
+// Tournaments no longer store rankings or a using_mock flag
+const db = {
+  async getUsers(){ const {data} = await supabase.from("users").select("*"); return data||[]; },
+  async createUser(u){ await supabase.from("users").insert(u); },
+  async updateUser(username, updates){ await supabase.from("users").update(updates).eq("username", username); },
+
+  async getLeagues(){ const {data} = await supabase.from("leagues").select("*"); return data||[]; },
+  async createLeague(l){ await supabase.from("leagues").insert(l); },
+  async updateLeague(code, updates){ await supabase.from("leagues").update(updates).eq("code", code); },
+  async deleteLeague(code){ await supabase.from("leagues").delete().eq("code", code); },
+
+  async getTournaments(){ const {data} = await supabase.from("tournaments").select("*"); return data||[]; },
+  async upsertTournament(t){ await supabase.from("tournaments").upsert(t, {onConflict:"league_code"}); },
+
+  async getPicks(){ const {data} = await supabase.from("picks").select("*"); return data||[]; },
+  async upsertPick(p){ await supabase.from("picks").upsert(p, {onConflict:"pick_key"}); },
+
+  // Rankings: always a full replace — truncate then insert
+  async getRankings(){
+    const {data} = await supabase.from("rankings").select("*").order("rank", {ascending:true});
+    return data||[];
+  },
+  async saveRankings(rows){
+    // Delete all then insert fresh — clean slate every upload
+    await supabase.from("rankings").delete().neq("rank", -99999);
+    if(rows.length === 0) return;
+    // Insert in batches of 500 to stay within Supabase limits
+    for(let i = 0; i < rows.length; i += 500){
+      await supabase.from("rankings").insert(rows.slice(i, i + 500));
+    }
+  },
+};
+
+function tournamentToDb(code, t){
+  return {
+    league_code:   code,
+    major_id:      t.majorId      || "",
+    name:          t.name         || "",
+    course:        t.course       || "",
+    date:          t.date         || "",
+    status:        t.status       || "upcoming",
+    current_round: t.currentRound || 1,
+    cut_line:      t.cutLine      || null,
+    locked:        t.locked       || false,
+    last_updated:  t.lastUpdated  || null,
+    field:         t.field        || [],
+  };
+}
+
+function tournamentFromDb(row){
+  if(!row) return DEFAULT_TOURNAMENT;
+  return {
+    majorId:      row.major_id      || "",
+    name:         row.name          || "",
+    course:       row.course        || "",
+    date:         row.date          || "",
+    status:       row.status        || "upcoming",
+    currentRound: row.current_round || 1,
+    cutLine:      row.cut_line      || null,
+    locked:       row.locked        || false,
+    lastUpdated:  row.last_updated  || null,
+    field:        row.field         || [],
+  };
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function genCode(){ return Math.random().toString(36).substring(2,7).toUpperCase(); }
 function isTop10(r){ return r && r <= 10; }
 
-function getGolferScore(name, field, cutLine){
-  const g = field.find(f => f.name === name);
-  if(!g) return {pos:null, score:0, display:"–"};
-  if(g.cut){ const p = cutLine||65; return {pos:p, score:p, display:`MC (T${p})`}; }
-  return {pos:g.pos, score:g.pos||0, display:g.pos ? `${g.pos}` : "–"};
-}
-
-function calcScore(picks, field, cutLine){
-  if(!picks?.mains?.length) return {total:null, breakdown:[]};
-  const breakdown = picks.mains.map(name => ({name, ...getGolferScore(name, field, cutLine)}));
-  const total = breakdown.reduce((s,b) => s + (b.score||0), 0);
-  return {total, breakdown};
-}
-
-// ─── ESPN leaderboard fetch (no API key needed) ───────────────────────────────
-async function fetchLiveData(majorId){
-  const res = await fetch(`/api/golf?tournamentId=${majorId}`);
-  if(!res.ok){
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || `ESPN API ${res.status}`);
-  }
-  const data = await res.json();
-
-  // ESPN returns competitors inside events[0].competitions[0].competitors
-  const competitors = data?.events?.[0]?.competitions?.[0]?.competitors || [];
-
-  const field = competitors.map((c, i) => {
-    const athlete = c.athlete || {};
-    const status  = c.status  || {};
-
-    // Score relative to par — ESPN stores as displayValue e.g. "-5", "E", "+2"
-    const scoreStr = c.score || "E";
-    let score = 0;
-    if(scoreStr === "E") score = 0;
-    else score = parseInt(scoreStr) || 0;
-
-    // Position
-    const posStr  = c.sortOrder || c.position?.displayName || "";
-    const pos     = parseInt(posStr) || null;
-
-    // Thru
-    const thruVal = status.thru || status.period || 0;
-    const thru    = status.type?.description === "Final" ? "F"
-                  : thruVal === 0 ? "-"
-                  : `${thruVal}`;
-
-    // Cut / WD / DQ
-    const isCut   = status.type?.name === "STATUS_MISSED_CUT"
-                 || status.type?.name === "STATUS_CUT"
-                 || c.status?.type?.name?.includes("CUT");
-    const isOut   = status.type?.name === "STATUS_WITHDRAWN"
-                 || status.type?.name === "STATUS_DQ"
-                 || isCut;
-
-    return {
-      id:        athlete.id || i,
-      name:      athlete.displayName || `Player ${i+1}`,
-      worldRank: 999, // filled in after name-matching against uploaded rankings
-      pos,
-      score,
-      thru,
-      cut: isOut,
-    };
-  });
-
-  return field;
-}
-
-// ─── CSV rankings parser ──────────────────────────────────────────────────────
-// Parses OWGR CSV file. Expected columns (from owgr.com download):
-// Player Id, RANKING, LAST WEEK, END, CTRY, NAME, First Name, Last Name,
-// AVERAGE POINTS, TOTAL POINTS, EVENTS PLAYED (DIVISOR), ...
-function parseOwgrCsv(csvText){
-  const lines = csvText.trim().split("\n");
-  if(lines.length < 2) throw new Error("CSV appears empty");
-
-  // Strip BOM if present, clean up quoted fields
-  const clean = s => s.replace(/^\uFEFF/, "").replace(/^"|"$/g, "").trim();
-
-  const headers = lines[0].split(",").map(clean).map(h => h.toUpperCase());
-  const rankIdx    = headers.indexOf("RANKING");
-  const nameIdx    = headers.indexOf("NAME");
-  const firstIdx   = headers.indexOf("FIRST NAME");
-  const lastIdx    = headers.indexOf("LAST NAME");
-  const ctryIdx    = headers.indexOf("CTRY");
-  const ptsIdx     = headers.indexOf("AVERAGE POINTS");
-
-  if(rankIdx === -1 || (nameIdx === -1 && firstIdx === -1)){
-    throw new Error("CSV missing expected columns (RANKING, NAME). Check the file format.");
-  }
-
-  const rankings = [];
-  for(let i = 1; i < lines.length; i++){
-    const line = lines[i];
-    if(!line.trim()) continue;
-
-    // Handle quoted fields with commas inside
-    const cols = [];
-    let inQ = false, cur = "";
-    for(const ch of line){
-      if(ch === '"'){ inQ = !inQ; }
-      else if(ch === "," && !inQ){ cols.push(cur); cur = ""; }
-      else cur += ch;
-    }
-    cols.push(cur);
-
-    const cleanCol = idx => (cols[idx] || "").replace(/^"|"$/g, "").trim();
-
-    const rankStr = cleanCol(rankIdx);
-    const rank    = parseInt(rankStr);
-    if(!rank || isNaN(rank)) continue; // skip unranked rows
-
-    // Build full name — prefer NAME column, fall back to First + Last
-    let name = nameIdx >= 0 ? cleanCol(nameIdx) : "";
-    if(!name && firstIdx >= 0 && lastIdx >= 0){
-      name = `${cleanCol(firstIdx)} ${cleanCol(lastIdx)}`.trim();
-    }
-    if(!name) continue;
-
-    const country = ctryIdx >= 0 ? cleanCol(ctryIdx) : "";
-    const ptsRaw  = ptsIdx  >= 0 ? cleanCol(ptsIdx)  : "-";
-    const points  = ptsRaw === "-" ? "0.00" : parseFloat(ptsRaw).toFixed(2);
-
-    rankings.push({ rank, name, country, points });
-
-    // Only need top 300 for the top-10 rule (with some buffer)
-    if(rank > 300) break;
-  }
-
-  if(rankings.length === 0) throw new Error("No ranked players found in CSV.");
-  return rankings;
-}
-
-// Match ESPN player names to OWGR names (fuzzy — handles accents, Jr., etc.)
+// Normalise player names for fuzzy matching between OWGR and ESPN
 function normaliseName(n){
   return n.toLowerCase()
-    .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // strip accents
-    .replace(/\bjr\.?\b|\bsr\.?\b|\biii?\b|\bii\b/g, "") // strip suffixes
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/\bjr\.?\b|\bsr\.?\b|\biii?\b|\bii\b/g, "")
     .replace(/[^a-z\s]/g, "").replace(/\s+/g, " ").trim();
 }
 
@@ -233,68 +105,138 @@ function buildRankLookup(rankings){
   return map;
 }
 
+// Apply rankings to a field array, returning updated worldRank per player
 function applyRankings(field, rankings){
   const lookup = buildRankLookup(rankings);
-  return field.map(p => {
-    const rank = lookup[normaliseName(p.name)] || 999;
-    return {...p, worldRank: rank};
+  return field.map(p => ({
+    ...p,
+    worldRank: lookup[normaliseName(p.name)] || 999,
+  }));
+}
+
+// Scoring: look up a pick by name in the live field
+// Returns { pos, score, display, unmatched }
+// unmatched=true means the player wasn't found in the field — shown as "?" not 0
+function getGolferScore(name, field, cutLine){
+  const g = field.find(f => normaliseName(f.name) === normaliseName(name));
+  if(!g) return {pos:null, score:null, display:"?", unmatched:true};
+  if(g.cut){
+    const p = cutLine || 65;
+    return {pos:p, score:p, display:`MC (T${p})`, unmatched:false};
+  }
+  if(!g.pos) return {pos:null, score:null, display:"–", unmatched:false};
+  return {pos:g.pos, score:g.pos, display:`${g.pos}`, unmatched:false};
+}
+
+// Calculate total score for a set of picks against the live field
+// Unmatched players are excluded from total (shown as ?) rather than counting as 0
+function calcScore(picks, field, cutLine){
+  if(!picks?.mains?.length) return {total:null, breakdown:[]};
+  const breakdown = picks.mains.map(name => ({name, ...getGolferScore(name, field, cutLine)}));
+  const matched   = breakdown.filter(b => !b.unmatched && b.score !== null);
+  const total     = matched.length === 4
+    ? matched.reduce((s,b) => s + b.score, 0)
+    : null; // don't show total until all 4 are matched
+  return {total, breakdown};
+}
+
+// ─── ESPN leaderboard fetch ───────────────────────────────────────────────────
+async function fetchLiveData(majorId, rankings){
+  const res = await fetch(`/api/golf?tournamentId=${majorId}`);
+  if(!res.ok){
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || `ESPN API ${res.status}`);
+  }
+  const data = await res.json();
+  const competitors = data?.events?.[0]?.competitions?.[0]?.competitors || [];
+  if(competitors.length === 0) throw new Error("No competitors found — tournament may not have started yet.");
+
+  const field = competitors.map((c, i) => {
+    const athlete = c.athlete || {};
+    const status  = c.status  || {};
+
+    const scoreStr = c.score || "E";
+    const score    = scoreStr === "E" ? 0 : (parseInt(scoreStr) || 0);
+
+    const posStr = c.sortOrder || c.position?.displayName || "";
+    const pos    = parseInt(posStr) || null;
+
+    const thruVal = status.thru || status.period || 0;
+    const thru    = status.type?.description === "Final" ? "F"
+                  : thruVal === 0 ? "-" : `${thruVal}`;
+
+    const isCut = status.type?.name === "STATUS_MISSED_CUT"
+               || status.type?.name === "STATUS_CUT"
+               || (status.type?.name||"").includes("CUT");
+    const isOut = status.type?.name === "STATUS_WITHDRAWN"
+               || status.type?.name === "STATUS_DQ"
+               || isCut;
+
+    return {
+      id:        athlete.id || i,
+      name:      athlete.displayName || `Player ${i+1}`,
+      worldRank: 999,
+      pos, score, thru,
+      cut: isOut,
+    };
   });
+
+  // Cross-reference with rankings to assign worldRank
+  return rankings.length > 0 ? applyRankings(field, rankings) : field;
 }
 
-// ─── Supabase DB helpers ──────────────────────────────────────────────────────
-const db = {
-  async getUsers(){ const {data} = await supabase.from("users").select("*"); return data||[]; },
-  async createUser(u){ await supabase.from("users").insert(u); },
-  async updateUser(username, updates){ await supabase.from("users").update(updates).eq("username", username); },
-  async getLeagues(){ const {data} = await supabase.from("leagues").select("*"); return data||[]; },
-  async createLeague(l){ await supabase.from("leagues").insert(l); },
-  async updateLeague(code, updates){ await supabase.from("leagues").update(updates).eq("code", code); },
-  async deleteLeague(code){ await supabase.from("leagues").delete().eq("code", code); },
-  async getTournaments(){ const {data} = await supabase.from("tournaments").select("*"); return data||[]; },
-  async upsertTournament(t){ await supabase.from("tournaments").upsert(t, {onConflict:"league_code"}); },
-  async getPicks(){ const {data} = await supabase.from("picks").select("*"); return data||[]; },
-  async upsertPick(p){ await supabase.from("picks").upsert(p, {onConflict:"pick_key"}); },
-};
+// ─── CSV parser ───────────────────────────────────────────────────────────────
+function parseOwgrCsv(csvText){
+  const lines = csvText.trim().split("\n");
+  if(lines.length < 2) throw new Error("CSV appears empty");
 
-function tournamentToDb(code, t){
-  return {
-    league_code: code,
-    major_id: t.majorId||"",
-    name: t.name||"",
-    course: t.course||"",
-    date: t.date||"",
-    status: t.status||"upcoming",
-    current_round: t.currentRound||1,
-    cut_line: t.cutLine||null,
-    locked: t.locked||false,
-    using_mock: t.usingMock===true,
-    last_updated: t.lastUpdated||null,
-    field: t.field||[],
-    rankings: t.rankings||[],
-  };
-}
+  const clean = s => s.replace(/^\uFEFF/, "").replace(/^"|"$/g, "").trim();
+  const headers = lines[0].split(",").map(clean).map(h => h.toUpperCase());
 
-function tournamentFromDb(row){
-  if(!row) return DEFAULT_TOURNAMENT;
-  const rankings = row.rankings || [];
-  const field    = row.field    || [];
-  // Auto-correct: if real rankings or field data exists, usingMock should be false
-  const hasRealData = rankings.length > 0 || field.length > 0;
-  const usingMock = hasRealData ? false : row.using_mock === true;
-  return {
-    majorId: row.major_id||"",
-    name: row.name||"",
-    course: row.course||"",
-    date: row.date||"",
-    status: row.status||"upcoming",
-    currentRound: row.current_round||1,
-    cutLine: row.cut_line||null,
-    locked: row.locked||false,
-    usingMock,
-    lastUpdated: row.last_updated||null,
-    field,
-    rankings,
-  };
+  const rankIdx  = headers.indexOf("RANKING");
+  const nameIdx  = headers.indexOf("NAME");
+  const firstIdx = headers.indexOf("FIRST NAME");
+  const lastIdx  = headers.indexOf("LAST NAME");
+  const ctryIdx  = headers.indexOf("CTRY");
+  const ptsIdx   = headers.indexOf("AVERAGE POINTS");
+
+  if(rankIdx === -1 || (nameIdx === -1 && firstIdx === -1)){
+    throw new Error("CSV missing expected columns. Expected: RANKING, NAME (or FIRST NAME + LAST NAME).");
+  }
+
+  const rankings = [];
+  for(let i = 1; i < lines.length; i++){
+    const line = lines[i];
+    if(!line.trim()) continue;
+
+    // Parse quoted CSV fields correctly
+    const cols = [];
+    let inQ = false, cur = "";
+    for(const ch of line){
+      if(ch === '"'){ inQ = !inQ; }
+      else if(ch === "," && !inQ){ cols.push(cur); cur = ""; }
+      else cur += ch;
+    }
+    cols.push(cur);
+
+    const col = idx => (cols[idx] || "").replace(/^"|"$/g, "").trim();
+    const rank = parseInt(col(rankIdx));
+    if(!rank || isNaN(rank)) continue;
+
+    let name = nameIdx >= 0 ? col(nameIdx) : "";
+    if(!name && firstIdx >= 0) name = `${col(firstIdx)} ${col(lastIdx)}`.trim();
+    if(!name) continue;
+
+    const country = ctryIdx >= 0 ? col(ctryIdx) : "";
+    const ptsRaw  = ptsIdx  >= 0 ? col(ptsIdx)  : "-";
+    const points  = ptsRaw === "-" ? "0.00" : parseFloat(ptsRaw).toFixed(2);
+
+    rankings.push({ rank, name, country, points });
+    if(rank > 300) break; // 300 is plenty of buffer for the top-10 rule
+  }
+
+  if(rankings.length === 0) throw new Error("No ranked players found in CSV.");
+  return rankings;
 }
 
 // ─── Theme ────────────────────────────────────────────────────────────────────
@@ -356,23 +298,45 @@ tr:last-child td{border-bottom:none;}
 .loading{display:flex;align-items:center;justify-content:center;min-height:100vh;background:${C.bg};color:${C.muted};font-size:16px;font-family:'DM Sans',sans-serif;}
 `;
 
+// ─── Countdown hook ───────────────────────────────────────────────────────────
+function useCountdown(dateStr){
+  const [diff, setDiff] = useState(null);
+  useEffect(() => {
+    if(!dateStr) return;
+    const target = new Date(dateStr);
+    const tick = () => { const ms = target - Date.now(); setDiff(ms > 0 ? ms : 0); };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [dateStr]);
+  if(diff === null || diff === undefined) return null;
+  if(diff === 0) return "Starting now!";
+  const d = Math.floor(diff / 86400000);
+  const h = Math.floor((diff % 86400000) / 3600000);
+  const m = Math.floor((diff % 3600000) / 60000);
+  const s = Math.floor((diff % 60000) / 1000);
+  if(d > 0) return `${d}d ${h}h ${m}m`;
+  if(h > 0) return `${h}h ${m}m ${s}s`;
+  return `${m}m ${s}s`;
+}
+
 // ─── App Root ─────────────────────────────────────────────────────────────────
 export default function App(){
-  const [users,       setUsers]       = useState([]);
-  const [picks,       setPicks]       = useState({});
-  const [leagues,     setLeagues]     = useState([]);
-  const [tournaments, setTournaments] = useState({});
-  const [currentUser, setCurrentUser] = useState(null);
-  const [page,        setPage]        = useState("login");
-  const [authMode,    setAuthMode]    = useState("login");
+  const [users,            setUsers]            = useState([]);
+  const [picks,            setPicks]            = useState({});
+  const [leagues,          setLeagues]          = useState([]);
+  const [tournaments,      setTournaments]      = useState({});
+  const [rankings,         setRankings]         = useState([]); // global, from rankings table
+  const [currentUser,      setCurrentUser]      = useState(null);
+  const [page,             setPage]             = useState("login");
+  const [authMode,         setAuthMode]         = useState("login");
   const [activeLeagueCode, setActiveLeagueCode] = useState(null);
-  const [loading,     setLoading]     = useState(true);
+  const [loading,          setLoading]          = useState(true);
 
-  // Load all data from Supabase on mount
   useEffect(() => {
     async function load(){
-      const [dbUsers, dbLeagues, dbTournaments, dbPicks] = await Promise.all([
-        db.getUsers(), db.getLeagues(), db.getTournaments(), db.getPicks(),
+      const [dbUsers, dbLeagues, dbTournaments, dbPicks, dbRankings] = await Promise.all([
+        db.getUsers(), db.getLeagues(), db.getTournaments(), db.getPicks(), db.getRankings(),
       ]);
       setUsers(dbUsers);
       setLeagues(dbLeagues);
@@ -382,12 +346,13 @@ export default function App(){
       const pMap = {};
       dbPicks.forEach(row => { pMap[row.pick_key] = {mains: row.mains||[], tiebreakers: row.tiebreakers||[]}; });
       setPicks(pMap);
+      setRankings(dbRankings);
       setLoading(false);
     }
     load();
   }, []);
 
-  // Keep active league in sync
+  // Keep active league in sync when leagues or user changes
   useEffect(() => {
     const myLeagues = leagues.filter(l => l.members.includes(currentUser?.username));
     if(myLeagues.length > 0 && (!activeLeagueCode || !myLeagues.find(l => l.code === activeLeagueCode))){
@@ -397,15 +362,8 @@ export default function App(){
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [leagues, currentUser]);
 
-  const saveUsers = u => setUsers(u);
-
-  const saveLeagues = async (updated) => {
-    setLeagues(updated);
-  };
-
-  const updateLeagueInDb = async (league) => {
-    await db.updateLeague(league.code, {members: league.members});
-  };
+  const saveLeagues = async (updated) => { setLeagues(updated); };
+  const updateLeagueInDb = async (league) => { await db.updateLeague(league.code, {members: league.members}); };
 
   const savePicks = async (updated) => {
     setPicks(updated);
@@ -420,23 +378,26 @@ export default function App(){
   };
 
   const updateTournament = async (code, t) => {
-    const updated = {...tournaments, [code]: t};
-    setTournaments(updated);
+    setTournaments(prev => ({...prev, [code]: t}));
     await db.upsertTournament(tournamentToDb(code, t));
+  };
+
+  const updateRankings = async (newRankings) => {
+    await db.saveRankings(newRankings);
+    setRankings(newRankings);
   };
 
   const isAdmin = currentUser?.role === "admin";
   const myLeagues = leagues.filter(l => l.members.includes(currentUser?.username));
   const activeLeague = leagues.find(l => l.code === activeLeagueCode) || null;
   const activeTournament = activeLeague ? (tournaments[activeLeague.code] || DEFAULT_TOURNAMENT) : null;
-
   const logout = () => { setCurrentUser(null); setPage("login"); setActiveLeagueCode(null); };
 
-  if(loading) return <><style>{CSS}</style><div className="loading">Loading...</div></>;
+  if(loading) return <><style>{CSS}</style><div className="loading">Loading…</div></>;
 
   if(page === "login") return (
     <><style>{CSS}</style>
-    <AuthPage users={users} saveUsers={saveUsers} authMode={authMode} setAuthMode={setAuthMode}
+    <AuthPage users={users} setUsers={setUsers} authMode={authMode} setAuthMode={setAuthMode}
       onLogin={u => { setCurrentUser(u); setPage("standings"); }}
     /></>
   );
@@ -446,11 +407,11 @@ export default function App(){
     <div style={{minHeight:"100vh", display:"flex", flexDirection:"column"}}>
       <Header user={currentUser} isAdmin={isAdmin} page={page} setPage={setPage} onLogout={logout}/>
       <main style={{flex:1, maxWidth:940, margin:"0 auto", width:"100%", padding:"24px 16px"}}>
-        {page==="standings"   && <StandingsPage user={currentUser} leagues={leagues} saveLeagues={saveLeagues} updateLeagueInDb={updateLeagueInDb} picks={picks} tournaments={tournaments} activeLeagueCode={activeLeagueCode} setActiveLeagueCode={setActiveLeagueCode}/>}
+        {page==="standings"   && <StandingsPage user={currentUser} leagues={leagues} saveLeagues={saveLeagues} updateLeagueInDb={updateLeagueInDb} picks={picks} tournaments={tournaments} rankings={rankings} activeLeagueCode={activeLeagueCode} setActiveLeagueCode={setActiveLeagueCode}/>}
         {page==="leaderboard" && <LeaderboardPage activeLeague={activeLeague} activeTournament={activeTournament} myLeagues={myLeagues} activeLeagueCode={activeLeagueCode} setActiveLeagueCode={setActiveLeagueCode}/>}
-        {page==="rankings"    && <RankingsPage activeTournament={activeTournament}/>}
-        {page==="picks"       && <MyPicksPage user={currentUser} leagues={leagues} saveLeagues={saveLeagues} updateLeagueInDb={updateLeagueInDb} picks={picks} savePicks={savePicks} tournaments={tournaments} activeLeagueCode={activeLeagueCode} setActiveLeagueCode={setActiveLeagueCode}/>}
-        {page==="admin"       && isAdmin  && <AdminPage users={users} saveUsers={saveUsers} leagues={leagues} saveLeagues={saveLeagues} tournaments={tournaments} updateTournament={updateTournament} picks={picks} currentUser={currentUser}/>}
+        {page==="rankings"    && <RankingsPage rankings={rankings}/>}
+        {page==="picks"       && <MyPicksPage user={currentUser} leagues={leagues} saveLeagues={saveLeagues} updateLeagueInDb={updateLeagueInDb} picks={picks} savePicks={savePicks} tournaments={tournaments} rankings={rankings} activeLeagueCode={activeLeagueCode} setActiveLeagueCode={setActiveLeagueCode}/>}
+        {page==="admin"       && isAdmin && <AdminPage users={users} setUsers={setUsers} leagues={leagues} saveLeagues={saveLeagues} tournaments={tournaments} updateTournament={updateTournament} rankings={rankings} updateRankings={updateRankings} picks={picks} currentUser={currentUser}/>}
       </main>
     </div></>
   );
@@ -459,12 +420,12 @@ export default function App(){
 // ─── Header ───────────────────────────────────────────────────────────────────
 function Header({user, isAdmin, page, setPage, onLogout}){
   const tabs = [
-    {id:"standings",  label:"Standings"},
-    {id:"leaderboard",label:"Leaderboard"},
-    {id:"rankings",   label:"World Rankings"},
-    {id:"picks",      label:"My Picks"},
-    {id:"admin",      label:"Admin",      adminOnly:true},
-  ].filter(t => t.adminOnly ? isAdmin : t.hideAdmin ? !isAdmin : true);
+    {id:"standings",   label:"Standings"},
+    {id:"leaderboard", label:"Leaderboard"},
+    {id:"rankings",    label:"World Rankings"},
+    {id:"picks",       label:"My Picks"},
+    {id:"admin",       label:"Admin", adminOnly:true},
+  ].filter(t => !t.adminOnly || isAdmin);
 
   return (
     <header style={{background:C.surface, borderBottom:`1px solid ${C.border}`, position:"sticky", top:0, zIndex:100}}>
@@ -484,7 +445,7 @@ function Header({user, isAdmin, page, setPage, onLogout}){
 }
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────
-function AuthPage({users, saveUsers, authMode, setAuthMode, onLogin}){
+function AuthPage({users, setUsers, authMode, setAuthMode, onLogin}){
   const [form, setForm] = useState({username:"", password:"", confirm:""});
   const [err,  setErr]  = useState("");
   const [busy, setBusy] = useState(false);
@@ -503,7 +464,7 @@ function AuthPage({users, saveUsers, authMode, setAuthMode, onLogin}){
       const role = users.length === 0 ? "admin" : "member";
       const nu = {username: form.username.trim(), password: form.password, role};
       await db.createUser(nu);
-      saveUsers([...users, nu]);
+      setUsers(prev => [...prev, nu]);
       onLogin(nu);
     }
     setBusy(false);
@@ -556,8 +517,7 @@ function JoinLeagueBox({user, leagues, saveLeagues, updateLeagueInDb, onJoined})
     if(!l){ setErr("League code not found. Check with your admin."); return; }
     if(l.members.includes(user.username)){ setErr("You're already in this league."); return; }
     const updated = {...l, members: [...l.members, user.username]};
-    const updatedLeagues = leagues.map(x => x.code === l.code ? updated : x);
-    saveLeagues(updatedLeagues);
+    saveLeagues(leagues.map(x => x.code === l.code ? updated : x));
     await updateLeagueInDb(updated);
     onJoined(l.code);
   };
@@ -577,7 +537,7 @@ function JoinLeagueBox({user, leagues, saveLeagues, updateLeagueInDb, onJoined})
 }
 
 // ─── Standings Page ───────────────────────────────────────────────────────────
-function StandingsPage({user, leagues, saveLeagues, updateLeagueInDb, picks, tournaments, activeLeagueCode, setActiveLeagueCode}){
+function StandingsPage({user, leagues, saveLeagues, updateLeagueInDb, picks, tournaments, rankings, activeLeagueCode, setActiveLeagueCode}){
   const myLeagues = leagues.filter(l => l.members.includes(user.username));
   const activeLeague = myLeagues.find(l => l.code === activeLeagueCode) || null;
   const tournament = activeLeague ? (tournaments[activeLeague.code] || DEFAULT_TOURNAMENT) : null;
@@ -589,8 +549,8 @@ function StandingsPage({user, leagues, saveLeagues, updateLeagueInDb, picks, tou
     </div>
   );
 
-  const rawField = tournament?.field || [];
-  const field = rawField.filter(() => !tournament?.usingMock);
+  // field is the live ESPN snapshot — only meaningful during/after tournament
+  const field   = tournament?.field || [];
   const cutLine = tournament?.cutLine;
   const members = activeLeague?.members || [];
 
@@ -603,37 +563,47 @@ function StandingsPage({user, leagues, saveLeagues, updateLeagueInDb, picks, tou
     if(a.total===null && b.total!==null) return 1;
     if(b.total===null && a.total!==null) return -1;
     if(a.total !== b.total) return (a.total||0) - (b.total||0);
+    // Tiebreaker 1
     const ta = a.picks?.tiebreakers?.[0], tb = b.picks?.tiebreakers?.[0];
-    if(ta && tb) return getGolferScore(ta,field,cutLine).score - getGolferScore(tb,field,cutLine).score;
+    if(ta && tb){
+      const sa = getGolferScore(ta, field, cutLine).score;
+      const sb = getGolferScore(tb, field, cutLine).score;
+      if(sa !== null && sb !== null) return sa - sb;
+    }
     return 0;
   });
 
   let rk = 1;
   const ranked = scored.map((p,i,arr) => {
-    if(i > 0 && arr[i-1].total === p.total) return {...p, rank:arr[i-1].rank};
+    if(i > 0 && arr[i-1].total === p.total) return {...p, rank: arr[i-1].rank};
     const r = rk; rk = i+2; return {...p, rank:r};
   });
 
   return (
     <div className="fade">
-      <div style={{display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:20, flexWrap:"wrap", gap:12}}>
+      <div style={{display:"flex", alignItems:"flex-end", justifyContent:"space-between", marginBottom:20, flexWrap:"wrap", gap:12}}>
         <div>
           <div className="page-title">Standings</div>
           <div className="page-sub">{activeLeague?.name} · {tournament?.name || "No tournament set up"}</div>
         </div>
-        <div style={{display:"flex", gap:8, alignItems:"center", flexWrap:"wrap"}}>
+        <div style={{display:"flex", gap:8, alignItems:"center", flexWrap:"nowrap"}}>
           {myLeagues.length > 1 && (
             <select className="league-select" value={activeLeagueCode||""} onChange={e => setActiveLeagueCode(e.target.value)}>
               {myLeagues.map(l => <option key={l.code} value={l.code}>{l.name}</option>)}
             </select>
           )}
-          <button className="btn-ghost" style={{fontSize:12, padding:"7px 12px"}} onClick={() => window.alert(`League code: ${activeLeague?.code}`)}>Share Code</button>
+          <button className="btn-ghost" style={{fontSize:12, padding:"7px 12px", whiteSpace:"nowrap"}} onClick={() => window.alert(`League code: ${activeLeague?.code}`)}>Share Code</button>
         </div>
       </div>
 
       {!tournament?.name && (
         <div style={{background:"#3b2a00", border:`1px solid #92400e`, borderRadius:10, padding:"12px 16px", marginBottom:20, fontSize:13, color:C.warning}}>
           No tournament configured for this league yet. Ask your admin to set one up.
+        </div>
+      )}
+      {tournament?.name && field.length === 0 && (
+        <div style={{background:C.card, border:`1px solid ${C.border}`, borderRadius:10, padding:"12px 16px", marginBottom:20, fontSize:13, color:C.muted}}>
+          Tournament hasn't started yet — scores will appear here once live data is fetched.
         </div>
       )}
 
@@ -665,6 +635,8 @@ function StandingsCard({player, field, tournament, isCurrentUser}){
   const has = player.picks?.mains?.length > 0;
   const medals = ["","🥇","🥈","🥉"];
   const cutLine = tournament?.cutLine;
+  const hasLiveScores = field.length > 0;
+
   return (
     <div className="card" style={{cursor:"pointer", borderColor:open?C.accentDim:isCurrentUser?"#2a4a2a":C.border, transition:"border-color .2s"}} onClick={() => setOpen(o => !o)}>
       <div style={{display:"flex", alignItems:"center", gap:12}}>
@@ -680,8 +652,10 @@ function StandingsCard({player, field, tournament, isCurrentUser}){
           {!has && <div style={{fontSize:12, color:C.muted}}>No picks submitted</div>}
         </div>
         <div style={{textAlign:"right"}}>
-          <div style={{fontSize:22, fontWeight:700, color:has?C.accent:C.muted, fontFamily:"'Playfair Display',serif"}}>{has?player.total:"–"}</div>
-          <div style={{fontSize:11, color:C.muted}}>total pos.</div>
+          <div style={{fontSize:22, fontWeight:700, color:has&&hasLiveScores?C.accent:C.muted, fontFamily:"'Playfair Display',serif"}}>
+            {has && hasLiveScores && player.total !== null ? player.total : "–"}
+          </div>
+          <div style={{fontSize:11, color:C.muted}}>{hasLiveScores ? "total pos." : "awaiting"}</div>
         </div>
         <span style={{color:C.muted, fontSize:12, marginLeft:4}}>{open?"▲":"▼"}</span>
       </div>
@@ -690,9 +664,11 @@ function StandingsCard({player, field, tournament, isCurrentUser}){
           <div style={{fontSize:11, color:C.muted, textTransform:"uppercase", letterSpacing:".8px", marginBottom:10}}>Picks & Positions</div>
           <div style={{display:"flex", flexWrap:"wrap", gap:8, marginBottom:10}}>
             {player.breakdown.map(b => (
-              <div key={b.name} style={{display:"flex", alignItems:"center", gap:8, background:C.surface, border:`1px solid ${b.score>=(cutLine||65)?C.danger:C.border}`, borderRadius:8, padding:"7px 12px", fontSize:13}}>
+              <div key={b.name} style={{display:"flex", alignItems:"center", gap:8, background:C.surface, border:`1px solid ${b.score>=(cutLine||65)&&!b.unmatched?C.danger:C.border}`, borderRadius:8, padding:"7px 12px", fontSize:13}}>
                 <span style={{color:"#f0fff0"}}>{b.name}</span>
-                <span style={{fontWeight:700, color:b.score>=(cutLine||65)?C.danger:C.accent}}>{b.display.includes("MC")?b.display:`#${b.display}`}</span>
+                <span style={{fontWeight:700, color:b.unmatched?C.warning:b.score>=(cutLine||65)?C.danger:C.accent}}>
+                  {b.unmatched ? "?" : b.display.includes("MC") ? b.display : b.display !== "–" ? `#${b.display}` : "–"}
+                </span>
               </div>
             ))}
           </div>
@@ -701,10 +677,14 @@ function StandingsCard({player, field, tournament, isCurrentUser}){
             <div style={{display:"flex", gap:8}}>
               {player.picks.tiebreakers.map((name,i) => (
                 <div key={name} style={{display:"flex", alignItems:"center", gap:8, background:C.surface, border:`1px solid ${C.border}`, borderRadius:8, padding:"7px 12px", fontSize:13, opacity:.75}}>
-                  <span style={{color:C.muted, fontSize:11}}>TB{i+1}</span><span style={{color:"#f0fff0"}}>{name}</span>
+                  <span style={{color:C.muted, fontSize:11}}>TB{i+1}</span>
+                  <span style={{color:"#f0fff0"}}>{name}</span>
                 </div>
               ))}
             </div></>
+          )}
+          {player.breakdown.some(b => b.unmatched) && (
+            <p style={{fontSize:12, color:C.warning, marginTop:10}}>⚠ Players marked ? were not found in the live field — total score is withheld until all 4 are matched.</p>
           )}
         </div>
       )}
@@ -712,44 +692,20 @@ function StandingsCard({player, field, tournament, isCurrentUser}){
   );
 }
 
-// ─── Countdown helper ─────────────────────────────────────────────────────────
-function useCountdown(dateStr){
-  const [diff, setDiff] = useState(null);
-  useEffect(() => {
-    if(!dateStr) return;
-    const target = new Date(dateStr);
-    const tick = () => {
-      const ms = target - Date.now();
-      setDiff(ms > 0 ? ms : 0);
-    };
-    tick();
-    const id = setInterval(tick, 1000);
-    return () => clearInterval(id);
-  }, [dateStr]);
-  if(diff === null) return null;
-  if(diff === 0) return "Starting now!";
-  const d = Math.floor(diff / 86400000);
-  const h = Math.floor((diff % 86400000) / 3600000);
-  const m = Math.floor((diff % 3600000) / 60000);
-  const s = Math.floor((diff % 60000) / 1000);
-  if(d > 0) return `${d}d ${h}h ${m}m`;
-  if(h > 0) return `${h}h ${m}m ${s}s`;
-  return `${m}m ${s}s`;
-}
-
 // ─── Leaderboard Page ─────────────────────────────────────────────────────────
 function LeaderboardPage({activeLeague, activeTournament, myLeagues, activeLeagueCode, setActiveLeagueCode}){
   const [search, setSearch] = useState("");
   const tournament = activeTournament || DEFAULT_TOURNAMENT;
-  const field = (tournament.field || []).filter(g => !tournament.usingMock);
+  const field = tournament.field || [];
+  const hasField = field.length > 0;
+
+  // Countdown to tournament start (date is YYYY-MM-DD, treat as 7am local)
+  const countdown = useCountdown(tournament.date ? `${tournament.date}T07:00:00` : null);
+  const isUpcoming = !hasField && tournament.status !== "complete";
+
   const sorted = [...field]
     .filter(g => g.name.toLowerCase().includes(search.toLowerCase()))
     .sort((a,b) => { if(a.cut&&!b.cut)return 1; if(!a.cut&&b.cut)return -1; return (a.pos||999)-(b.pos||999); });
-
-  // Countdown uses tournament date field (YYYY-MM-DD stored from setup)
-  const countdown = useCountdown(tournament.date ? tournament.date + "T07:00:00" : null);
-  const hasField = field.length > 0;
-  const isUpcoming = tournament.status === "upcoming" || !hasField;
 
   if(myLeagues.length === 0) return (
     <div className="fade empty-state"><p style={{color:C.muted}}>Join a league first to see the leaderboard.</p></div>
@@ -757,7 +713,7 @@ function LeaderboardPage({activeLeague, activeTournament, myLeagues, activeLeagu
 
   return (
     <div className="fade">
-      <div style={{display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:20, flexWrap:"wrap", gap:12}}>
+      <div style={{display:"flex", alignItems:"flex-end", justifyContent:"space-between", marginBottom:20, flexWrap:"wrap", gap:12}}>
         <div>
           <div className="page-title">Leaderboard</div>
           <div className="page-sub">
@@ -765,39 +721,16 @@ function LeaderboardPage({activeLeague, activeTournament, myLeagues, activeLeagu
             {hasField && ` · R${tournament.currentRound} of 4`}
           </div>
         </div>
-        <div style={{display:"flex", gap:8, alignItems:"center", flexWrap:"wrap"}}>
+        <div style={{display:"flex", gap:8, alignItems:"center", flexWrap:"nowrap"}}>
           {myLeagues.length > 1 && (
             <select className="league-select" value={activeLeagueCode||""} onChange={e => setActiveLeagueCode(e.target.value)}>
               {myLeagues.map(l => <option key={l.code} value={l.code}>{l.name}</option>)}
             </select>
           )}
-          {tournament.cutLine && <span className="badge b-amber">Cut T{tournament.cutLine}</span>}
+          {tournament.cutLine && <span className="badge b-amber" style={{whiteSpace:"nowrap"}}>Cut T{tournament.cutLine}</span>}
           {hasField && <input placeholder="Search golfer…" value={search} onChange={e => setSearch(e.target.value)} style={{width:160}}/>}
         </div>
       </div>
-
-      {/* Pre-tournament countdown */}
-      {isUpcoming && tournament.name && (
-        <div style={{textAlign:"center", padding:"48px 24px"}}>
-          <div style={{fontSize:48, marginBottom:16}}>⛳</div>
-          <div style={{fontFamily:"'Playfair Display',serif", fontSize:28, fontWeight:700, color:"#f0fff0", marginBottom:8}}>
-            {tournament.name}
-          </div>
-          {tournament.course && <div style={{fontSize:14, color:C.muted, marginBottom:24}}>{tournament.course}</div>}
-          {countdown && (
-            <div style={{display:"inline-block", background:C.card, border:`1px solid ${C.border}`, borderRadius:16, padding:"20px 40px"}}>
-              <div style={{fontSize:11, color:C.muted, textTransform:"uppercase", letterSpacing:"1px", marginBottom:8}}>Tournament starts in</div>
-              <div style={{fontFamily:"'Playfair Display',serif", fontSize:40, fontWeight:700, color:C.accent, letterSpacing:"-1px"}}>
-                {countdown}
-              </div>
-            </div>
-          )}
-          {!tournament.date && <div style={{color:C.muted, fontSize:14, marginTop:16}}>Tournament date not yet set.</div>}
-          <div style={{marginTop:24, fontSize:13, color:C.muted}}>
-            Leaderboard will appear here once the tournament begins.
-          </div>
-        </div>
-      )}
 
       {/* No tournament configured */}
       {!tournament.name && (
@@ -807,11 +740,33 @@ function LeaderboardPage({activeLeague, activeTournament, myLeagues, activeLeagu
         </div>
       )}
 
-      {/* Live leaderboard table */}
+      {/* Pre-tournament countdown */}
+      {tournament.name && isUpcoming && (
+        <div style={{textAlign:"center", padding:"48px 24px"}}>
+          <div style={{fontSize:48, marginBottom:16}}>⛳</div>
+          <div style={{fontFamily:"'Playfair Display',serif", fontSize:28, fontWeight:700, color:"#f0fff0", marginBottom:8}}>
+            {tournament.name}
+          </div>
+          {tournament.course && <div style={{fontSize:14, color:C.muted, marginBottom:24}}>{tournament.course}</div>}
+          {countdown ? (
+            <div style={{display:"inline-block", background:C.card, border:`1px solid ${C.border}`, borderRadius:16, padding:"20px 40px"}}>
+              <div style={{fontSize:11, color:C.muted, textTransform:"uppercase", letterSpacing:"1px", marginBottom:8}}>Tournament starts in</div>
+              <div style={{fontFamily:"'Playfair Display',serif", fontSize:40, fontWeight:700, color:C.accent, letterSpacing:"-1px"}}>{countdown}</div>
+            </div>
+          ) : (
+            <p style={{color:C.muted, fontSize:14}}>Set a tournament date in Admin → Tournament Setup to see the countdown.</p>
+          )}
+          <div style={{marginTop:24, fontSize:13, color:C.muted}}>Leaderboard will appear here once live scores are fetched.</div>
+        </div>
+      )}
+
+      {/* Live leaderboard */}
       {hasField && (
         <div className="card" style={{padding:0, overflow:"hidden"}}>
           <table>
-            <thead><tr><th style={{width:50}}>Pos</th><th>Golfer</th><th style={{width:80}}>Score</th><th style={{width:60}}>Thru</th><th style={{width:90}}>World Rank</th></tr></thead>
+            <thead>
+              <tr><th style={{width:50}}>Pos</th><th>Golfer</th><th style={{width:80}}>Score</th><th style={{width:60}}>Thru</th><th style={{width:90}}>OWGR</th></tr>
+            </thead>
             <tbody>
               {sorted.length === 0 && (
                 <tr><td colSpan={5} style={{textAlign:"center", color:C.muted, padding:28}}>No results for "{search}"</td></tr>
@@ -819,10 +774,17 @@ function LeaderboardPage({activeLeague, activeTournament, myLeagues, activeLeagu
               {sorted.map(g => (
                 <tr key={g.id}>
                   <td>{g.cut ? <span className="badge b-red">MC</span> : <span style={{fontWeight:700, color:g.pos<=3?C.gold:"#f0fff0"}}>{g.pos}</span>}</td>
-                  <td style={{fontWeight:500, color:"#f0fff0"}}>{g.name}{isTop10(g.worldRank) && <span className="badge b-amber" style={{marginLeft:8}}>Top 10</span>}</td>
-                  <td style={{fontWeight:700, color:g.cut?C.muted:g.score<0?C.accent:g.score>0?C.danger:"#f0fff0"}}>{g.cut?"–":g.score===0?"E":g.score>0?`+${g.score}`:g.score}</td>
+                  <td style={{fontWeight:500, color:"#f0fff0"}}>
+                    {g.name}
+                    {isTop10(g.worldRank) && <span className="badge b-amber" style={{marginLeft:8}}>Top 10</span>}
+                  </td>
+                  <td style={{fontWeight:700, color:g.cut?C.muted:g.score<0?C.accent:g.score>0?C.danger:"#f0fff0"}}>
+                    {g.cut ? "–" : g.score===0 ? "E" : g.score>0 ? `+${g.score}` : g.score}
+                  </td>
                   <td style={{color:C.muted}}>{g.thru}</td>
-                  <td style={{color:isTop10(g.worldRank)?C.gold:C.muted, fontWeight:isTop10(g.worldRank)?600:400}}>{g.worldRank && g.worldRank < 999 ? `#${g.worldRank}` : "–"}</td>
+                  <td style={{color:isTop10(g.worldRank)?C.gold:C.muted, fontWeight:isTop10(g.worldRank)?600:400}}>
+                    {g.worldRank && g.worldRank < 999 ? `#${g.worldRank}` : "–"}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -834,17 +796,13 @@ function LeaderboardPage({activeLeague, activeTournament, myLeagues, activeLeagu
 }
 
 // ─── World Rankings Page ──────────────────────────────────────────────────────
-function RankingsPage({activeTournament}){
+// Rankings come directly from the global rankings state (own Supabase table)
+function RankingsPage({rankings}){
   const [search, setSearch] = useState("");
-  const tournament = activeTournament || DEFAULT_TOURNAMENT;
-  // Rankings come from the uploaded OWGR CSV — stored in tournament.rankings
-  // We never fall back to MOCK_RANKINGS here so users see "not uploaded" state
-  const rankings = (tournament.rankings && tournament.rankings.length > 0 && !tournament.usingMock)
-    ? tournament.rankings
-    : null;
-  const filtered = (rankings || []).filter(r => r.name.toLowerCase().includes(search.toLowerCase()));
-  const lastUpdated = tournament.lastUpdated
-    ? new Date(tournament.lastUpdated).toLocaleDateString("en-GB", {day:"numeric", month:"short", year:"numeric"})
+  const hasRankings = rankings.length > 0;
+  const filtered = rankings.filter(r => r.name.toLowerCase().includes(search.toLowerCase()));
+  const uploadedAt = rankings[0]?.uploaded_at
+    ? new Date(rankings[0].uploaded_at).toLocaleDateString("en-GB", {day:"numeric", month:"short", year:"numeric"})
     : null;
 
   return (
@@ -853,36 +811,34 @@ function RankingsPage({activeTournament}){
         <div>
           <div className="page-title">World Rankings</div>
           <div className="page-sub">
-            Official World Golf Ranking
-            {lastUpdated && !tournament.usingMock ? ` · Uploaded ${lastUpdated}` : ""}
+            Official World Golf Ranking{uploadedAt ? ` · Uploaded ${uploadedAt}` : ""}
           </div>
         </div>
-        {rankings && (
+        {hasRankings && (
           <input placeholder="Search player…" value={search} onChange={e => setSearch(e.target.value)} style={{width:180}}/>
         )}
       </div>
 
-      {!rankings && (
+      {!hasRankings && (
         <div style={{textAlign:"center", padding:"48px 24px"}}>
           <div style={{fontSize:40, marginBottom:16}}>📊</div>
-          <div style={{fontFamily:"'Playfair Display',serif", fontSize:22, fontWeight:700, color:"#f0fff0", marginBottom:8}}>
-            Rankings not yet uploaded
-          </div>
+          <div style={{fontFamily:"'Playfair Display',serif", fontSize:22, fontWeight:700, color:"#f0fff0", marginBottom:8}}>Rankings not yet uploaded</div>
           <p style={{color:C.muted, fontSize:14, maxWidth:400, margin:"0 auto", lineHeight:1.65}}>
-            Your admin needs to upload the OWGR rankings CSV before the tournament.
-            Go to <strong style={{color:"#f0fff0"}}>Admin → Live Data</strong> to upload.
+            Your admin needs to upload the OWGR CSV. Go to <strong style={{color:"#f0fff0"}}>owgr.com</strong>, download the rankings CSV, then upload it in <strong style={{color:"#f0fff0"}}>Admin → Live Data</strong>.
           </p>
         </div>
       )}
 
-      {rankings && (
+      {hasRankings && (
         <>
           <div style={{background:"#0c2744", border:"1px solid #1e4a7a", borderRadius:10, padding:"12px 16px", marginBottom:20, fontSize:13, color:"#60a5fa", lineHeight:1.6}}>
             Players ranked <strong>1–10</strong> are flagged as Top 10. Each player may only include a maximum of <strong>2 top-10 ranked golfers</strong> in their main four picks.
           </div>
           <div className="card" style={{padding:0, overflow:"hidden"}}>
             <table>
-              <thead><tr><th style={{width:60}}>Rank</th><th>Player</th><th style={{width:100}}>Country</th><th style={{width:110}}>OWGR Points</th><th style={{width:120}}>Pick Status</th></tr></thead>
+              <thead>
+                <tr><th style={{width:60}}>Rank</th><th>Player</th><th style={{width:110}}>Country</th><th style={{width:110}}>Avg Points</th><th style={{width:120}}>Pick Status</th></tr>
+              </thead>
               <tbody>
                 {filtered.length === 0 && (
                   <tr><td colSpan={5} style={{textAlign:"center", color:C.muted, padding:28}}>No results for "{search}"</td></tr>
@@ -906,7 +862,8 @@ function RankingsPage({activeTournament}){
 }
 
 // ─── My Picks Page ────────────────────────────────────────────────────────────
-function MyPicksPage({user, leagues, saveLeagues, updateLeagueInDb, picks, savePicks, tournaments, activeLeagueCode, setActiveLeagueCode}){
+// Player list always comes from rankings table — never from the live field
+function MyPicksPage({user, leagues, saveLeagues, updateLeagueInDb, picks, savePicks, tournaments, rankings, activeLeagueCode, setActiveLeagueCode}){
   const myLeagues = leagues.filter(l => l.members.includes(user.username));
   const activeLeague = myLeagues.find(l => l.code === activeLeagueCode) || null;
   const tournament = activeLeague ? (tournaments[activeLeague.code] || DEFAULT_TOURNAMENT) : null;
@@ -935,39 +892,46 @@ function MyPicksPage({user, leagues, saveLeagues, updateLeagueInDb, picks, saveP
   );
 
   const locked = tournament?.locked || false;
-  // Player list always comes from uploaded OWGR rankings — top 200 is plenty
-  // Live field data is only used for scoring on the Standings page
-  const rankings = (tournament?.rankings || []).filter(r => r.rank <= 200);
-  const field = rankings.map(r => ({
-    id: r.rank,
-    name: r.name,
-    worldRank: r.rank,
-    pos: null, score: 0, thru: "-", cut: false,
-  }));
-  const top10Count = selected.filter(n => { const g = field.find(f => f.name===n); return isTop10(g?.worldRank); }).length;
-  const available = field.filter(g => !g.cut && g.name.toLowerCase().includes(search.toLowerCase()));
+  const hasRankings = rankings.length > 0;
 
-  const canMain = name => {
+  // Player list: top 200 from global rankings table
+  const playerPool = rankings
+    .filter(r => r.rank <= 200)
+    .map(r => ({name: r.name, worldRank: r.rank}));
+
+  const top10Count = selected.filter(n => {
+    const p = playerPool.find(r => r.name === n);
+    return isTop10(p?.worldRank);
+  }).length;
+
+  const available = playerPool.filter(p =>
+    p.name.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const canPickAsMain = name => {
     if(selected.includes(name)) return true;
     if(selected.length >= 4) return false;
-    const g = field.find(f => f.name===name);
-    if(isTop10(g?.worldRank) && top10Count >= 2) return false;
+    const p = playerPool.find(r => r.name === name);
+    if(isTop10(p?.worldRank) && top10Count >= 2) return false;
     return true;
   };
+
   const toggleMain = name => {
     if(locked) return;
-    if(selected.includes(name)){ setSelected(s => s.filter(x => x!==name)); return; }
-    if(!canMain(name)) return;
+    if(selected.includes(name)){ setSelected(s => s.filter(x => x !== name)); return; }
+    if(!canPickAsMain(name)) return;
     setSelected(s => [...s, name]);
   };
+
   const toggleTB = name => {
     if(locked || selected.includes(name)) return;
-    if(tbs.includes(name)){ setTbs(t => t.filter(x => x!==name)); return; }
+    if(tbs.includes(name)){ setTbs(t => t.filter(x => x !== name)); return; }
     if(tbs.length >= 2) return;
     setTbs(t => [...t, name]);
   };
+
   const handleSave = async () => {
-    if(selected.length!==4 || tbs.length!==2) return;
+    if(selected.length !== 4 || tbs.length !== 2) return;
     await savePicks({...picks, [pickKey]:{mains:selected, tiebreakers:tbs}});
     setSaved(true); setTimeout(() => setSaved(false), 2500);
   };
@@ -977,7 +941,7 @@ function MyPicksPage({user, leagues, saveLeagues, updateLeagueInDb, picks, saveP
       <div style={{display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:20, flexWrap:"wrap", gap:12}}>
         <div>
           <div className="page-title">My Picks</div>
-          <div className="page-sub">{activeLeague?.name} · {tournament?.name||"No tournament yet"}</div>
+          <div className="page-sub">{activeLeague?.name} · {tournament?.name || "No tournament yet"}</div>
         </div>
         {myLeagues.length > 1 && (
           <select className="league-select" value={activeLeagueCode||""} onChange={e => setActiveLeagueCode(e.target.value)}>
@@ -991,9 +955,9 @@ function MyPicksPage({user, leagues, saveLeagues, updateLeagueInDb, picks, saveP
           No tournament set up for this league yet. Ask your admin to configure one.
         </div>
       )}
-      {tournament?.name && field.length === 0 && (
+      {!hasRankings && (
         <div style={{background:"#3b2a00", border:"1px solid #92400e", borderRadius:10, padding:"12px 16px", marginBottom:20, fontSize:13, color:C.warning}}>
-          World rankings haven't been uploaded yet — the player list will appear once your admin uploads the OWGR CSV.
+          World rankings haven't been uploaded yet — ask your admin to upload the OWGR CSV before you can make picks.
         </div>
       )}
       {locked && (
@@ -1007,13 +971,13 @@ function MyPicksPage({user, leagues, saveLeagues, updateLeagueInDb, picks, saveP
         <div className="card">
           <div style={{fontSize:11, color:C.muted, textTransform:"uppercase", letterSpacing:".8px", marginBottom:8}}>Main Picks ({selected.length}/4)</div>
           <div style={{fontSize:12, color:C.muted, marginBottom:12}}>Top 10 world ranking: {top10Count}/2 used</div>
-          {selected.length===0 && <p style={{color:C.muted, fontSize:13}}>None selected yet</p>}
+          {selected.length === 0 && <p style={{color:C.muted, fontSize:13}}>None selected yet</p>}
           <div style={{display:"flex", flexDirection:"column", gap:6}}>
             {selected.map(name => {
-              const g = field.find(f => f.name===name);
+              const p = playerPool.find(r => r.name === name);
               return (
-                <div key={name} style={{display:"flex", alignItems:"center", justifyContent:"space-between", background:C.surface, border:`1px solid ${isTop10(g?.worldRank)?C.gold:C.border}`, borderRadius:8, padding:"8px 12px", fontSize:13}}>
-                  <span style={{color:"#f0fff0"}}>{name}{isTop10(g?.worldRank) && <span className="badge b-amber" style={{marginLeft:6}}>T10</span>}</span>
+                <div key={name} style={{display:"flex", alignItems:"center", justifyContent:"space-between", background:C.surface, border:`1px solid ${isTop10(p?.worldRank)?C.gold:C.border}`, borderRadius:8, padding:"8px 12px", fontSize:13}}>
+                  <span style={{color:"#f0fff0"}}>{name}{isTop10(p?.worldRank) && <span className="badge b-amber" style={{marginLeft:6}}>T10</span>}</span>
                   {!locked && <button style={{background:"none", border:"none", color:C.danger, cursor:"pointer", fontSize:18, lineHeight:1}} onClick={() => toggleMain(name)}>×</button>}
                 </div>
               );
@@ -1022,12 +986,13 @@ function MyPicksPage({user, leagues, saveLeagues, updateLeagueInDb, picks, saveP
         </div>
         <div className="card">
           <div style={{fontSize:11, color:C.muted, textTransform:"uppercase", letterSpacing:".8px", marginBottom:8}}>Tiebreakers ({tbs.length}/2)</div>
-          <div style={{fontSize:12, color:C.muted, marginBottom:12}}>No ranking restriction · only used if tied</div>
-          {tbs.length===0 && <p style={{color:C.muted, fontSize:13}}>None selected yet</p>}
+          <div style={{fontSize:12, color:C.muted, marginBottom:12}}>Used sequentially if scores are tied</div>
+          {tbs.length === 0 && <p style={{color:C.muted, fontSize:13}}>None selected yet</p>}
           <div style={{display:"flex", flexDirection:"column", gap:6}}>
-            {tbs.map(name => (
-              <div key={name} style={{display:"flex", alignItems:"center", justifyContent:"space-between", background:C.surface, border:`1px solid ${C.border}`, borderRadius:8, padding:"8px 12px", fontSize:13, opacity:.85}}>
-                <span style={{color:"#f0fff0"}}>{name}</span>
+            {tbs.map((name,i) => (
+              <div key={name} style={{display:"flex", alignItems:"center", justifyContent:"space-between", background:C.surface, border:`1px solid ${C.border}`, borderRadius:8, padding:"8px 12px", fontSize:13}}>
+                <span style={{color:C.muted, fontSize:11, marginRight:8}}>TB{i+1}</span>
+                <span style={{color:"#f0fff0", flex:1}}>{name}</span>
                 {!locked && <button style={{background:"none", border:"none", color:C.danger, cursor:"pointer", fontSize:18, lineHeight:1}} onClick={() => toggleTB(name)}>×</button>}
               </div>
             ))}
@@ -1035,37 +1000,40 @@ function MyPicksPage({user, leagues, saveLeagues, updateLeagueInDb, picks, saveP
         </div>
       </div>
 
-      {!locked && tournament?.name && (
+      {hasRankings && !locked && (
         <>
-          <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14, flexWrap:"wrap", gap:10}}>
-            <input placeholder="Search field…" value={search} onChange={e => setSearch(e.target.value)} style={{width:200}}/>
-            <div style={{display:"flex", gap:12, alignItems:"center"}}>
-              {saved && <span style={{color:C.accent, fontSize:13, fontWeight:500}}>✓ Picks saved!</span>}
-              <button className="btn-primary" onClick={handleSave} disabled={selected.length!==4||tbs.length!==2}>
-                {selected.length===4&&tbs.length===2 ? "Save Picks" : `${4-selected.length} pick${4-selected.length!==1?"s":""} + ${2-tbs.length} TB needed`}
-              </button>
-            </div>
+          <div style={{display:"flex", gap:10, marginBottom:14, alignItems:"center", flexWrap:"wrap"}}>
+            <input placeholder="Search player…" value={search} onChange={e => setSearch(e.target.value)} style={{maxWidth:260}}/>
+            <span style={{fontSize:13, color:C.muted}}>Click a player to add as main pick · hold to add as tiebreaker</span>
           </div>
-          <div className="card" style={{padding:0, overflow:"hidden"}}>
+          <div className="card" style={{padding:0, overflow:"hidden", maxHeight:420, overflowY:"auto"}}>
             <table>
-              <thead><tr><th>Golfer</th><th style={{width:90}}>World Rank</th><th style={{width:90, textAlign:"center"}}>Main Pick</th><th style={{width:90, textAlign:"center"}}>Tiebreaker</th></tr></thead>
+              <thead><tr><th style={{width:55}}>Rank</th><th>Player</th><th style={{width:110}}>Country</th><th style={{width:130}}>Action</th></tr></thead>
               <tbody>
-                {available.map(g => {
-                  const isMain = selected.includes(g.name), isTB = tbs.includes(g.name);
-                  const okMain = canMain(g.name), okTB = !isMain && (isTB || tbs.length < 2);
+                {available.map(p => {
+                  const inMain = selected.includes(p.name);
+                  const inTB   = tbs.includes(p.name);
+                  const canMain = canPickAsMain(p.name);
+                  const canTB  = !inMain && !inTB && tbs.length < 2;
                   return (
-                    <tr key={g.id}>
-                      <td style={{fontWeight:500, color:"#f0fff0"}}>{g.name}{isTop10(g.worldRank) && <span className="badge b-amber" style={{marginLeft:8}}>Top 10</span>}</td>
-                      <td style={{color:isTop10(g.worldRank)?C.gold:C.muted, fontWeight:isTop10(g.worldRank)?600:400}}>#{g.worldRank||"–"}</td>
-                      <td style={{textAlign:"center"}}>
-                        <button onClick={() => toggleMain(g.name)} style={{background:isMain?C.accent:C.surface, color:isMain?"#061006":okMain?"#f0fff0":C.muted, border:`1px solid ${isMain?C.accent:C.border}`, borderRadius:6, padding:"5px 14px", fontSize:12, cursor:okMain||isMain?"pointer":"not-allowed", opacity:!okMain&&!isMain?0.35:1}}>
-                          {isMain?"✓ In":"Pick"}
-                        </button>
+                    <tr key={p.name} style={{opacity: (!canMain && !inMain && !canTB) ? .4 : 1}}>
+                      <td><span style={{fontWeight:700, color:isTop10(p.worldRank)?C.gold:"#f0fff0"}}>{p.worldRank}</span></td>
+                      <td style={{fontWeight:500, color:"#f0fff0"}}>
+                        {p.name}
+                        {isTop10(p.worldRank) && <span className="badge b-amber" style={{marginLeft:6}}>T10</span>}
                       </td>
-                      <td style={{textAlign:"center"}}>
-                        <button onClick={() => toggleTB(g.name)} disabled={isMain} style={{background:isTB?"#854d0e":C.surface, color:isTB?C.gold:okTB?"#f0fff0":C.muted, border:`1px solid ${isTB?"#92400e":C.border}`, borderRadius:6, padding:"5px 14px", fontSize:12, cursor:okTB&&!isMain?"pointer":"not-allowed", opacity:(!okTB||isMain)&&!isTB?0.35:1}}>
-                          {isTB?"✓ TB":"TB"}
-                        </button>
+                      <td style={{color:C.muted}}>{rankings.find(r=>r.name===p.name)?.country||"–"}</td>
+                      <td>
+                        <div style={{display:"flex", gap:6}}>
+                          <button
+                            style={{background: inMain?"#7f1d1d":canMain?"#14532d":C.surface, color: inMain?C.danger:canMain?C.accent:C.muted, border:"none", borderRadius:6, padding:"4px 10px", fontSize:12, cursor:canMain||inMain?"pointer":"default"}}
+                            onClick={() => toggleMain(p.name)}
+                          >{inMain ? "Remove" : "Pick"}</button>
+                          <button
+                            style={{background: inTB?"#451a03":canTB?C.card:C.surface, color: inTB?C.gold:canTB?"#f0fff0":C.muted, border:`1px solid ${inTB?"#92400e":C.border}`, borderRadius:6, padding:"4px 10px", fontSize:12, cursor:canTB||inTB?"pointer":"default"}}
+                            onClick={() => toggleTB(p.name)}
+                          >{inTB ? "Remove TB" : "Tiebreaker"}</button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -1075,36 +1043,34 @@ function MyPicksPage({user, leagues, saveLeagues, updateLeagueInDb, picks, saveP
           </div>
         </>
       )}
-      <div style={{marginTop:20, textAlign:"center"}}>
-        <button className="btn-ghost" style={{fontSize:13}} onClick={async () => {
-          const code = window.prompt("Enter a league code to join:");
-          if(!code) return;
-          const l = leagues.find(l => l.code === code.toUpperCase().trim());
-          if(!l){ window.alert("League not found."); return; }
-          if(l.members.includes(user.username)){ window.alert("You're already in this league."); return; }
-          const updated = {...l, members:[...l.members, user.username]};
-          saveLeagues(leagues.map(x => x.code===l.code ? updated : x));
-          await updateLeagueInDb(updated);
-          setActiveLeagueCode(l.code);
-        }}>+ Join Another League</button>
-      </div>
+
+      {hasRankings && !locked && (
+        <div style={{marginTop:20, display:"flex", alignItems:"center", gap:14}}>
+          <button className="btn-primary" onClick={handleSave} disabled={selected.length!==4||tbs.length!==2}>
+            {saved ? "✓ Picks saved!" : "Save My Picks"}
+          </button>
+          {(selected.length!==4||tbs.length!==2) && (
+            <span style={{fontSize:13, color:C.muted}}>Select 4 main picks and 2 tiebreakers to save.</span>
+          )}
+        </div>
+      )}
     </div>
   );
 }
 
 // ─── Admin Page ───────────────────────────────────────────────────────────────
-function AdminPage({users, saveUsers, leagues, saveLeagues, tournaments, updateTournament, picks, currentUser}){
+function AdminPage({users, setUsers, leagues, saveLeagues, tournaments, updateTournament, rankings, updateRankings, picks, currentUser}){
   const [tab, setTab] = useState("leagues");
-  const [selectedLeagueCode, setSelectedLeagueCode] = useState(leagues[0]?.code||null);
-  const selectedLeague = leagues.find(l => l.code===selectedLeagueCode) || null;
+  const [selectedLeagueCode, setSelectedLeagueCode] = useState(leagues[0]?.code || "");
+  const selectedLeague = leagues.find(l => l.code === selectedLeagueCode) || null;
   const selectedTournament = selectedLeague ? (tournaments[selectedLeague.code] || DEFAULT_TOURNAMENT) : null;
-  const tabs = [{id:"leagues",label:"Leagues"},{id:"tournament",label:"Tournament Setup"},{id:"livedata",label:"Live Data & API"},{id:"users",label:"Users"}];
+  const tabs = [{id:"leagues",label:"Leagues"},{id:"tournament",label:"Tournament Setup"},{id:"livedata",label:"Live Data & Rankings"},{id:"users",label:"Users"}];
 
   return (
     <div className="fade">
       <div style={{marginBottom:24}}>
         <div className="page-title">Admin Panel</div>
-        <div className="page-sub">Manage leagues, tournaments, and users</div>
+        <div className="page-sub">Manage leagues, tournaments, and data</div>
       </div>
       <div style={{display:"flex", gap:4, marginBottom:28, background:C.surface, borderRadius:10, padding:4, width:"fit-content", flexWrap:"wrap"}}>
         {tabs.map(t => (
@@ -1124,46 +1090,43 @@ function AdminPage({users, saveUsers, leagues, saveLeagues, tournaments, updateT
                 </select>
               </div>
               {tab==="tournament" && selectedLeague && <TournamentSetup league={selectedLeague} tournament={selectedTournament||DEFAULT_TOURNAMENT} onSave={t => updateTournament(selectedLeague.code, t)}/>}
-              {tab==="livedata"   && selectedLeague && <LiveDataPanel   league={selectedLeague} tournament={selectedTournament||DEFAULT_TOURNAMENT} onSave={t => updateTournament(selectedLeague.code, t)}/>}
+              {tab==="livedata"   && selectedLeague && <LiveDataPanel league={selectedLeague} tournament={selectedTournament||DEFAULT_TOURNAMENT} rankings={rankings} onSaveTournament={t => updateTournament(selectedLeague.code, t)} onSaveRankings={updateRankings}/>}
             </>
       )}
-      {tab==="users" && <UsersTab users={users} saveUsers={saveUsers} leagues={leagues}/>}
+      {tab==="users" && <UsersTab users={users} setUsers={setUsers} leagues={leagues}/>}
     </div>
   );
 }
 
+// ─── Leagues Tab ──────────────────────────────────────────────────────────────
 function LeaguesTab({leagues, saveLeagues, selectedLeagueCode, setSelectedLeagueCode, picks, tournaments, creatorUsername}){
-  const [newName, setNewName] = useState("");
+  const [name,    setName]    = useState("");
   const [created, setCreated] = useState(null);
 
-  const createLeague = async () => {
-    if(!newName.trim()) return;
+  const create = async () => {
+    if(!name.trim()) return;
     const code = genCode();
-    const league = {name:newName.trim(), code, members:[creatorUsername]};
-    await db.createLeague(league);
-    saveLeagues([...leagues, league]);
+    const l = {name: name.trim(), code, members:[creatorUsername]};
+    await db.createLeague(l);
+    saveLeagues([...leagues, l]);
     setSelectedLeagueCode(code);
-    setCreated(code);
-    setNewName("");
-    setTimeout(() => setCreated(null), 4000);
+    setName(""); setCreated(code);
+    setTimeout(() => setCreated(null), 5000);
   };
 
   const deleteLeague = async code => {
-    const ok = window.confirm("Delete this league? All picks for this league will be lost.");
-    if(!ok) return;
+    if(!window.confirm("Delete this league? This cannot be undone.")) return;
     await db.deleteLeague(code);
     saveLeagues(leagues.filter(l => l.code !== code));
-    if(selectedLeagueCode === code) setSelectedLeagueCode(leagues[0]?.code||null);
   };
 
   return (
     <div>
       <div className="card" style={{marginBottom:20}}>
-        <div style={{fontWeight:600, color:"#f0fff0", marginBottom:6}}>Create New League</div>
-        <p style={{fontSize:13, color:C.muted, marginBottom:14, lineHeight:1.6}}>Each league gets a unique code. Share with friends so they can join and submit picks.</p>
+        <div style={{fontWeight:600, color:"#f0fff0", marginBottom:14}}>Create New League</div>
         <div style={{display:"flex", gap:10}}>
-          <input placeholder="League name e.g. Work Mates, Family Cup…" value={newName} onChange={e => setNewName(e.target.value)} onKeyDown={e => e.key==="Enter" && createLeague()} style={{flex:1}}/>
-          <button className="btn-primary" style={{whiteSpace:"nowrap", flexShrink:0}} onClick={createLeague} disabled={!newName.trim()}>Create League</button>
+          <input placeholder="League name e.g. The Lads" value={name} onChange={e => setName(e.target.value)} onKeyDown={e => e.key==="Enter" && create()} style={{maxWidth:320}}/>
+          <button className="btn-primary" style={{whiteSpace:"nowrap", flexShrink:0}} onClick={create} disabled={!name.trim()}>Create League</button>
         </div>
         {created && (
           <div style={{marginTop:14, padding:"12px 14px", background:"#0c2744", border:"1px solid #1e4a7a", borderRadius:8, display:"flex", alignItems:"center", gap:12}}>
@@ -1172,7 +1135,7 @@ function LeaguesTab({leagues, saveLeagues, selectedLeagueCode, setSelectedLeague
           </div>
         )}
       </div>
-      {leagues.length===0
+      {leagues.length === 0
         ? <div className="empty-state"><p style={{color:C.muted}}>No leagues yet. Create one above.</p></div>
         : <div style={{display:"flex", flexDirection:"column", gap:10}}>
             {leagues.map(l => {
@@ -1207,18 +1170,26 @@ function LeaguesTab({leagues, saveLeagues, selectedLeagueCode, setSelectedLeague
   );
 }
 
+// ─── Tournament Setup ─────────────────────────────────────────────────────────
 function TournamentSetup({league, tournament, onSave}){
   const [form, setForm] = useState({
-    majorId:tournament.majorId||"", course:tournament.course||"", date:tournament.date||"",
-    status:tournament.status||"upcoming", currentRound:tournament.currentRound||1, cutLine:tournament.cutLine??""
+    majorId: tournament.majorId||"", course: tournament.course||"",
+    date: tournament.date||"", status: tournament.status||"upcoming",
+    currentRound: tournament.currentRound||1, cutLine: tournament.cutLine??""
   });
   const [locked, setLocked] = useState(tournament.locked||false);
   const [saved,  setSaved]  = useState(false);
-  const f = k => e => setForm(p => ({...p, [k]:e.target.value}));
-  const selectedMajor = MAJORS.find(m => m.id===form.majorId);
+  const f = k => e => setForm(p => ({...p, [k]: e.target.value}));
+  const selectedMajor = MAJORS.find(m => m.id === form.majorId);
 
   const save = async () => {
-    await onSave({...tournament, ...form, name:selectedMajor?.name||tournament.name, cutLine:form.cutLine===""?null:parseInt(form.cutLine), currentRound:parseInt(form.currentRound), locked});
+    await onSave({
+      ...tournament, ...form,
+      name: selectedMajor?.name || tournament.name,
+      cutLine: form.cutLine === "" ? null : parseInt(form.cutLine),
+      currentRound: parseInt(form.currentRound),
+      locked,
+    });
     setSaved(true); setTimeout(() => setSaved(false), 2000);
   };
 
@@ -1237,10 +1208,10 @@ function TournamentSetup({league, tournament, onSave}){
             <option value="">— Choose a major —</option>
             {MAJORS.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
           </select>
-          {selectedMajor && <p style={{fontSize:12, color:C.muted, marginTop:5}}>Default: {selectedMajor.course}</p>}
+          {selectedMajor && <p style={{fontSize:12, color:C.muted, marginTop:5}}>Default course: {selectedMajor.course}</p>}
         </div>
         <div><label className="form-label">Start Date</label><input type="date" value={form.date} onChange={f("date")}/></div>
-        <div><label className="form-label">Course Name</label><input placeholder={selectedMajor?.course||"Course name"} value={form.course} onChange={f("course")}/></div>
+        <div><label className="form-label">Course Name (optional override)</label><input placeholder={selectedMajor?.course||"Course name"} value={form.course} onChange={f("course")}/></div>
         <div>
           <label className="form-label">Status</label>
           <select value={form.status} onChange={f("status")}>
@@ -1276,66 +1247,58 @@ function TournamentSetup({league, tournament, onSave}){
   );
 }
 
-function LiveDataPanel({league, tournament, onSave}){
-  const [loading,     setLoading]     = useState(false);
-  const [error,       setError]       = useState("");
-  const [msg,         setMsg]         = useState("");
-  const [csvError,    setCsvError]    = useState("");
-  const [csvMsg,      setCsvMsg]      = useState("");
-  const [csvLoading,  setCsvLoading]  = useState(false);
+// ─── Live Data & Rankings Panel ───────────────────────────────────────────────
+function LiveDataPanel({league, tournament, rankings, onSaveTournament, onSaveRankings}){
+  const [scoreLoading, setScoreLoading] = useState(false);
+  const [scoreMsg,     setScoreMsg]     = useState("");
+  const [scoreError,   setScoreError]   = useState("");
+  const [csvLoading,   setCsvLoading]   = useState(false);
+  const [csvMsg,       setCsvMsg]       = useState("");
+  const [csvError,     setCsvError]     = useState("");
 
-  // ── Fetch live leaderboard from ESPN (no key needed) ──
-  const refresh = async () => {
-    if(!tournament.majorId){ setError("Select a major in Tournament Setup first."); return; }
-    setLoading(true); setError(""); setMsg("");
+  // Fetch live scores from ESPN
+  const fetchScores = async () => {
+    if(!tournament.majorId){ setScoreError("Select a major in Tournament Setup first."); return; }
+    setScoreLoading(true); setScoreError(""); setScoreMsg("");
     try {
-      let field = await fetchLiveData(tournament.majorId);
-      // If we have rankings stored, apply them immediately
-      if(tournament.rankings?.length){
-        field = applyRankings(field, tournament.rankings);
-      }
-      await onSave({...tournament, usingMock:false, field, lastUpdated:new Date().toISOString()});
+      const field = await fetchLiveData(tournament.majorId, rankings);
+      await onSaveTournament({...tournament, field, lastUpdated: new Date().toISOString()});
       const top10inField = field.filter(p => p.worldRank <= 10).length;
-      setMsg(`✓ ${field.length} golfers loaded. ${top10inField} world top-10 players in field.`);
-    } catch(e){ setError(`Failed: ${e.message}`); }
-    setLoading(false);
+      setScoreMsg(`✓ ${field.length} golfers loaded. ${top10inField} world top-10 players in field.`);
+    } catch(e){ setScoreError(`Failed: ${e.message}`); }
+    setScoreLoading(false);
   };
 
-  const useMock = async () => {
-    await onSave({...tournament, usingMock:true, field:[], lastUpdated:new Date().toISOString()});
-    setMsg("Switched to mock/empty state."); setTimeout(() => setMsg(""), 2000);
-  };
-
+  // Upload OWGR CSV → save to rankings table
   const handleCsvUpload = async (e) => {
     const file = e.target.files?.[0];
     if(!file) return;
     setCsvLoading(true); setCsvError(""); setCsvMsg("");
     try {
       const text = await file.text();
-      const rankings = parseOwgrCsv(text);
-      // Keep existing live field if present, re-apply new rankings to it
-      const existingField = (tournament.field||[]).length > 0 && !tournament.usingMock
-        ? applyRankings(tournament.field, rankings)
-        : [];
-      await onSave({
-        ...tournament,
-        rankings,
-        field: existingField,
-        usingMock: false,
-        lastUpdated: new Date().toISOString(),
-      });
-      const top10 = rankings.filter(r => r.rank <= 10);
-      setCsvMsg(`✓ ${rankings.length} rankings loaded. Top 10: ${top10.slice(0,5).map(r => r.name.split(" ").pop()).join(", ")}…`);
+      const parsed = parseOwgrCsv(text);
+      await onSaveRankings(parsed);
+      const top10 = parsed.filter(r => r.rank <= 10);
+      setCsvMsg(`✓ ${parsed.length} players saved. Top 10: ${top10.map(r => r.name.split(" ").pop()).join(", ")}`);
+      // If we have a live field, re-apply fresh rankings to it
+      if(tournament.field?.length > 0){
+        const updatedField = applyRankings(tournament.field, parsed);
+        await onSaveTournament({...tournament, field: updatedField});
+      }
     } catch(e){ setCsvError(`Failed: ${e.message}`); }
     setCsvLoading(false);
     e.target.value = "";
   };
 
+  const rankingsUploadedAt = rankings[0]?.uploaded_at
+    ? new Date(rankings[0].uploaded_at).toLocaleDateString("en-GB", {day:"numeric", month:"short", year:"numeric"})
+    : null;
+
   const stats = [
-    {label:"Data source",   value:tournament.usingMock ? "Mock" : "Live ESPN"},
-    {label:"Golfers",       value:(tournament.field||MOCK_FIELD).length},
-    {label:"Rankings",      value:tournament.rankings?.length ? `Top ${tournament.rankings.length}` : "Not uploaded"},
-    {label:"Last updated",  value:tournament.lastUpdated ? new Date(tournament.lastUpdated).toLocaleTimeString() : "Never"},
+    {label:"Tournament",    value: tournament.name || "Not set"},
+    {label:"Live field",    value: tournament.field?.length ? `${tournament.field.length} players` : "Not fetched"},
+    {label:"Rankings",      value: rankings.length ? `${rankings.length} players` : "Not uploaded"},
+    {label:"Last score fetch", value: tournament.lastUpdated ? new Date(tournament.lastUpdated).toLocaleTimeString() : "Never"},
   ];
 
   return (
@@ -1344,72 +1307,60 @@ function LiveDataPanel({league, tournament, onSave}){
         {stats.map(s => (
           <div key={s.label} style={{background:C.card, border:`1px solid ${C.border}`, borderRadius:10, padding:"12px 16px"}}>
             <div style={{fontSize:11, color:C.muted, textTransform:"uppercase", letterSpacing:".6px", marginBottom:6}}>{s.label}</div>
-            <div style={{fontSize:15, fontWeight:600, color:C.accent}}>{s.value}</div>
+            <div style={{fontSize:14, fontWeight:600, color:C.accent}}>{s.value}</div>
           </div>
         ))}
       </div>
 
-      {/* Live scores */}
+      {/* OWGR rankings upload */}
       <div className="card" style={{marginBottom:16}}>
+        <div style={{fontWeight:600, color:"#f0fff0", marginBottom:6}}>
+          Upload World Rankings (OWGR)
+          {rankingsUploadedAt && <span style={{fontWeight:400, fontSize:12, color:C.muted, marginLeft:10}}>Last uploaded: {rankingsUploadedAt}</span>}
+        </div>
+        <p style={{fontSize:13, color:C.muted, marginBottom:10, lineHeight:1.65}}>
+          Upload once before each major. Rankings are saved to their own table and shared across all leagues.
+          Download from <strong style={{color:"#f0fff0"}}>owgr.com</strong> → Rankings → Download CSV. Updated every Monday.
+        </p>
+        {csvMsg   && <p style={{color:C.accent,  fontSize:13, marginBottom:10}}>✓ {csvMsg}</p>}
+        {csvError && <p style={{color:C.danger,  fontSize:13, marginBottom:10}}>⚠ {csvError}</p>}
+        <label style={{display:"inline-block", cursor: csvLoading?"not-allowed":"pointer", background:C.card, color:"#f0fff0", padding:"10px 18px", borderRadius:8, border:`1px solid #4a6a4a`, fontSize:14, fontWeight:500, opacity: csvLoading?0.5:1}}>
+          {csvLoading ? "Processing…" : "📂 Choose OWGR CSV file"}
+          <input type="file" accept=".csv" style={{display:"none"}} onChange={handleCsvUpload} disabled={csvLoading}/>
+        </label>
+      </div>
+
+      {/* Live scores */}
+      <div className="card">
         <div style={{fontWeight:600, color:"#f0fff0", marginBottom:6}}>Fetch Live Scores</div>
         <p style={{fontSize:13, color:C.muted, marginBottom:14, lineHeight:1.65}}>
           Pulls the live leaderboard from <strong style={{color:"#f0fff0"}}>ESPN</strong> — no API key needed.
-          World rankings are cross-referenced automatically from your uploaded OWGR file.
-          Refresh every 30 mins during the tournament, or as often as you like.
+          World rankings are cross-referenced automatically. Fetch manually every 30 mins during the tournament.
+          The ESPN endpoint only goes live once the tournament has started.
         </p>
-        {msg   && <p style={{color:C.accent,  fontSize:13, marginBottom:10}}>✓ {msg}</p>}
-        {error && <p style={{color:C.danger,  fontSize:13, marginBottom:10}}>⚠ {error}</p>}
-        <div style={{display:"flex", gap:10}}>
-          <button className="btn-primary" onClick={refresh} disabled={loading}>
-            {loading ? "Fetching…" : "Fetch Live Scores"}
-          </button>
-          <button className="btn-secondary" onClick={useMock}>Use Mock Data</button>
-        </div>
-      </div>
-
-      {/* OWGR CSV upload */}
-      <div className="card">
-        <div style={{fontWeight:600, color:"#f0fff0", marginBottom:6}}>Upload World Rankings (OWGR)</div>
-        <p style={{fontSize:13, color:C.muted, marginBottom:6, lineHeight:1.65}}>
-          Upload once before each major — rankings are used to enforce the <strong style={{color:"#f0fff0"}}>max 2 top-10 players</strong> rule and display the World Rankings page.
-        </p>
-        <div style={{background:C.surface, border:`1px solid ${C.border}`, borderRadius:8, padding:"10px 14px", marginBottom:14, fontSize:12, color:"#60a5fa", lineHeight:1.7}}>
-          <strong>How to download:</strong> Go to <strong>owgr.com</strong> → Rankings → Download (CSV/Excel). The file is updated every Monday after a tournament.
-        </div>
-        {csvMsg   && <p style={{color:C.accent, fontSize:13, marginBottom:10}}>✓ {csvMsg}</p>}
-        {csvError && <p style={{color:C.danger, fontSize:13, marginBottom:10}}>⚠ {csvError}</p>}
-        <label style={{
-          display:"inline-block", cursor:"pointer",
-          background:C.card, color:"#f0fff0",
-          padding:"10px 18px", borderRadius:8,
-          border:`1px solid #4a6a4a`, fontSize:14, fontWeight:500,
-          opacity: csvLoading ? 0.5 : 1,
-        }}>
-          {csvLoading ? "Processing…" : "📂 Choose OWGR CSV file"}
-          <input type="file" accept=".csv,.xlsx,.xls" style={{display:"none"}} onChange={handleCsvUpload} disabled={csvLoading}/>
-        </label>
-        {tournament.rankings?.length > 0 && (
-          <div style={{marginTop:12, fontSize:12, color:C.muted}}>
-            Current: {tournament.rankings.length} players ranked · Top 10: {tournament.rankings.filter(r=>r.rank<=10).map(r=>r.name.split(" ").pop()).join(", ")}
-          </div>
-        )}
+        {scoreMsg   && <p style={{color:C.accent,  fontSize:13, marginBottom:10}}>✓ {scoreMsg}</p>}
+        {scoreError && <p style={{color:C.danger,  fontSize:13, marginBottom:10}}>⚠ {scoreError}</p>}
+        <button className="btn-primary" onClick={fetchScores} disabled={scoreLoading}>
+          {scoreLoading ? "Fetching…" : "Fetch Live Scores"}
+        </button>
       </div>
     </div>
   );
 }
 
-function UsersTab({users, saveUsers, leagues}){
+// ─── Users Tab ────────────────────────────────────────────────────────────────
+function UsersTab({users, setUsers, leagues}){
   const promote = async username => {
     if(!window.confirm(`Promote ${username} to admin?`)) return;
     await db.updateUser(username, {role:"admin"});
-    saveUsers(users.map(u => u.username===username ? {...u, role:"admin"} : u));
+    setUsers(users.map(u => u.username===username ? {...u, role:"admin"} : u));
   };
   const demote = async username => {
     const admins = users.filter(u => u.role==="admin");
     if(admins.length <= 1){ window.alert("Cannot remove the last admin."); return; }
     if(!window.confirm(`Remove admin from ${username}?`)) return;
     await db.updateUser(username, {role:"member"});
-    saveUsers(users.map(u => u.username===username ? {...u, role:"member"} : u));
+    setUsers(users.map(u => u.username===username ? {...u, role:"member"} : u));
   };
   const getUserLeagues = username => leagues.filter(l => l.members.includes(username)).map(l => l.name).join(", ") || "None";
 
