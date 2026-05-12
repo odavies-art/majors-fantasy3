@@ -584,7 +584,8 @@ function StandingsPage({user, leagues, saveLeagues, updateLeagueInDb, picks, tou
     </div>
   );
 
-  const field = tournament?.field || MOCK_FIELD;
+  const rawField = tournament?.field || [];
+  const field = rawField.filter(() => !tournament?.usingMock);
   const cutLine = tournament?.cutLine;
   const members = activeLeague?.members || [];
 
@@ -706,14 +707,44 @@ function StandingsCard({player, field, tournament, isCurrentUser}){
   );
 }
 
+// ─── Countdown helper ─────────────────────────────────────────────────────────
+function useCountdown(dateStr){
+  const [diff, setDiff] = useState(null);
+  useEffect(() => {
+    if(!dateStr) return;
+    const target = new Date(dateStr);
+    const tick = () => {
+      const ms = target - Date.now();
+      setDiff(ms > 0 ? ms : 0);
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [dateStr]);
+  if(diff === null) return null;
+  if(diff === 0) return "Starting now!";
+  const d = Math.floor(diff / 86400000);
+  const h = Math.floor((diff % 86400000) / 3600000);
+  const m = Math.floor((diff % 3600000) / 60000);
+  const s = Math.floor((diff % 60000) / 1000);
+  if(d > 0) return `${d}d ${h}h ${m}m`;
+  if(h > 0) return `${h}h ${m}m ${s}s`;
+  return `${m}m ${s}s`;
+}
+
 // ─── Leaderboard Page ─────────────────────────────────────────────────────────
 function LeaderboardPage({activeLeague, activeTournament, myLeagues, activeLeagueCode, setActiveLeagueCode}){
   const [search, setSearch] = useState("");
   const tournament = activeTournament || DEFAULT_TOURNAMENT;
-  const field = tournament.field || MOCK_FIELD;
+  const field = (tournament.field || []).filter(g => !tournament.usingMock);
   const sorted = [...field]
     .filter(g => g.name.toLowerCase().includes(search.toLowerCase()))
     .sort((a,b) => { if(a.cut&&!b.cut)return 1; if(!a.cut&&b.cut)return -1; return (a.pos||999)-(b.pos||999); });
+
+  // Countdown uses tournament date field (YYYY-MM-DD stored from setup)
+  const countdown = useCountdown(tournament.date ? tournament.date + "T07:00:00" : null);
+  const hasField = field.length > 0;
+  const isUpcoming = tournament.status === "upcoming" || !hasField;
 
   if(myLeagues.length === 0) return (
     <div className="fade empty-state"><p style={{color:C.muted}}>Join a league first to see the leaderboard.</p></div>
@@ -724,7 +755,10 @@ function LeaderboardPage({activeLeague, activeTournament, myLeagues, activeLeagu
       <div style={{display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:20, flexWrap:"wrap", gap:12}}>
         <div>
           <div className="page-title">Leaderboard</div>
-          <div className="page-sub">{tournament.name||"No tournament active"} · R{tournament.currentRound} of 4</div>
+          <div className="page-sub">
+            {tournament.name || "No tournament active"}
+            {hasField && ` · R${tournament.currentRound} of 4`}
+          </div>
         </div>
         <div style={{display:"flex", gap:8, alignItems:"center", flexWrap:"wrap"}}>
           {myLeagues.length > 1 && (
@@ -733,26 +767,63 @@ function LeaderboardPage({activeLeague, activeTournament, myLeagues, activeLeagu
             </select>
           )}
           {tournament.cutLine && <span className="badge b-amber">Cut T{tournament.cutLine}</span>}
-          {tournament.usingMock && <span className="badge b-warn">Mock data</span>}
-          <input placeholder="Search golfer…" value={search} onChange={e => setSearch(e.target.value)} style={{width:160}}/>
+          {hasField && <input placeholder="Search golfer…" value={search} onChange={e => setSearch(e.target.value)} style={{width:160}}/>}
         </div>
       </div>
-      <div className="card" style={{padding:0, overflow:"hidden"}}>
-        <table>
-          <thead><tr><th style={{width:50}}>Pos</th><th>Golfer</th><th style={{width:80}}>Score</th><th style={{width:60}}>Thru</th><th style={{width:90}}>World Rank</th></tr></thead>
-          <tbody>
-            {sorted.map(g => (
-              <tr key={g.id}>
-                <td>{g.cut ? <span className="badge b-red">MC</span> : <span style={{fontWeight:700, color:g.pos<=3?C.gold:"#f0fff0"}}>{g.pos}</span>}</td>
-                <td style={{fontWeight:500, color:"#f0fff0"}}>{g.name}{isTop10(g.worldRank) && <span className="badge b-amber" style={{marginLeft:8}}>Top 10</span>}</td>
-                <td style={{fontWeight:700, color:g.cut?C.muted:g.score<0?C.accent:g.score>0?C.danger:"#f0fff0"}}>{g.cut?"–":g.score===0?"E":g.score>0?`+${g.score}`:g.score}</td>
-                <td style={{color:C.muted}}>{g.thru}</td>
-                <td style={{color:isTop10(g.worldRank)?C.gold:C.muted, fontWeight:isTop10(g.worldRank)?600:400}}>#{g.worldRank||"–"}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+
+      {/* Pre-tournament countdown */}
+      {isUpcoming && tournament.name && (
+        <div style={{textAlign:"center", padding:"48px 24px"}}>
+          <div style={{fontSize:48, marginBottom:16}}>⛳</div>
+          <div style={{fontFamily:"'Playfair Display',serif", fontSize:28, fontWeight:700, color:"#f0fff0", marginBottom:8}}>
+            {tournament.name}
+          </div>
+          {tournament.course && <div style={{fontSize:14, color:C.muted, marginBottom:24}}>{tournament.course}</div>}
+          {countdown && (
+            <div style={{display:"inline-block", background:C.card, border:`1px solid ${C.border}`, borderRadius:16, padding:"20px 40px"}}>
+              <div style={{fontSize:11, color:C.muted, textTransform:"uppercase", letterSpacing:"1px", marginBottom:8}}>Tournament starts in</div>
+              <div style={{fontFamily:"'Playfair Display',serif", fontSize:40, fontWeight:700, color:C.accent, letterSpacing:"-1px"}}>
+                {countdown}
+              </div>
+            </div>
+          )}
+          {!tournament.date && <div style={{color:C.muted, fontSize:14, marginTop:16}}>Tournament date not yet set.</div>}
+          <div style={{marginTop:24, fontSize:13, color:C.muted}}>
+            Leaderboard will appear here once the tournament begins.
+          </div>
+        </div>
+      )}
+
+      {/* No tournament configured */}
+      {!tournament.name && (
+        <div className="empty-state">
+          <div style={{fontSize:40, marginBottom:12}}>📋</div>
+          <p style={{color:C.muted}}>No tournament configured for this league yet.</p>
+        </div>
+      )}
+
+      {/* Live leaderboard table */}
+      {hasField && (
+        <div className="card" style={{padding:0, overflow:"hidden"}}>
+          <table>
+            <thead><tr><th style={{width:50}}>Pos</th><th>Golfer</th><th style={{width:80}}>Score</th><th style={{width:60}}>Thru</th><th style={{width:90}}>World Rank</th></tr></thead>
+            <tbody>
+              {sorted.length === 0 && (
+                <tr><td colSpan={5} style={{textAlign:"center", color:C.muted, padding:28}}>No results for "{search}"</td></tr>
+              )}
+              {sorted.map(g => (
+                <tr key={g.id}>
+                  <td>{g.cut ? <span className="badge b-red">MC</span> : <span style={{fontWeight:700, color:g.pos<=3?C.gold:"#f0fff0"}}>{g.pos}</span>}</td>
+                  <td style={{fontWeight:500, color:"#f0fff0"}}>{g.name}{isTop10(g.worldRank) && <span className="badge b-amber" style={{marginLeft:8}}>Top 10</span>}</td>
+                  <td style={{fontWeight:700, color:g.cut?C.muted:g.score<0?C.accent:g.score>0?C.danger:"#f0fff0"}}>{g.cut?"–":g.score===0?"E":g.score>0?`+${g.score}`:g.score}</td>
+                  <td style={{color:C.muted}}>{g.thru}</td>
+                  <td style={{color:isTop10(g.worldRank)?C.gold:C.muted, fontWeight:isTop10(g.worldRank)?600:400}}>{g.worldRank && g.worldRank < 999 ? `#${g.worldRank}` : "–"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
@@ -761,40 +832,70 @@ function LeaderboardPage({activeLeague, activeTournament, myLeagues, activeLeagu
 function RankingsPage({activeTournament}){
   const [search, setSearch] = useState("");
   const tournament = activeTournament || DEFAULT_TOURNAMENT;
-  const rankings = tournament.rankings || MOCK_RANKINGS;
-  const filtered = rankings.filter(r => r.name.toLowerCase().includes(search.toLowerCase()));
+  // Rankings come from the uploaded OWGR CSV — stored in tournament.rankings
+  // We never fall back to MOCK_RANKINGS here so users see "not uploaded" state
+  const rankings = (tournament.rankings && tournament.rankings.length > 0 && !tournament.usingMock)
+    ? tournament.rankings
+    : null;
+  const filtered = (rankings || []).filter(r => r.name.toLowerCase().includes(search.toLowerCase()));
+  const lastUpdated = tournament.lastUpdated
+    ? new Date(tournament.lastUpdated).toLocaleDateString("en-GB", {day:"numeric", month:"short", year:"numeric"})
+    : null;
 
   return (
     <div className="fade">
       <div style={{display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:20, flexWrap:"wrap", gap:12}}>
         <div>
           <div className="page-title">World Rankings</div>
-          <div className="page-sub">Official World Golf Ranking · {tournament.usingMock?"Mock data":"Live data"}</div>
+          <div className="page-sub">
+            Official World Golf Ranking
+            {lastUpdated && !tournament.usingMock ? ` · Uploaded ${lastUpdated}` : ""}
+          </div>
         </div>
-        <div style={{display:"flex", gap:8, alignItems:"center"}}>
-          {tournament.usingMock && <span className="badge b-warn">Mock data</span>}
+        {rankings && (
           <input placeholder="Search player…" value={search} onChange={e => setSearch(e.target.value)} style={{width:180}}/>
+        )}
+      </div>
+
+      {!rankings && (
+        <div style={{textAlign:"center", padding:"48px 24px"}}>
+          <div style={{fontSize:40, marginBottom:16}}>📊</div>
+          <div style={{fontFamily:"'Playfair Display',serif", fontSize:22, fontWeight:700, color:"#f0fff0", marginBottom:8}}>
+            Rankings not yet uploaded
+          </div>
+          <p style={{color:C.muted, fontSize:14, maxWidth:400, margin:"0 auto", lineHeight:1.65}}>
+            Your admin needs to upload the OWGR rankings CSV before the tournament.
+            Go to <strong style={{color:"#f0fff0"}}>Admin → Live Data</strong> to upload.
+          </p>
         </div>
-      </div>
-      <div style={{background:"#0c2744", border:"1px solid #1e4a7a", borderRadius:10, padding:"12px 16px", marginBottom:20, fontSize:13, color:"#60a5fa", lineHeight:1.6}}>
-        Players ranked <strong>1–10</strong> are flagged as Top 10. Each player may only include a maximum of 2 top-10 ranked golfers in their main four picks.
-      </div>
-      <div className="card" style={{padding:0, overflow:"hidden"}}>
-        <table>
-          <thead><tr><th style={{width:60}}>Rank</th><th>Player</th><th style={{width:70}}>Country</th><th style={{width:100}}>OWGR Points</th><th style={{width:110}}>Pick Status</th></tr></thead>
-          <tbody>
-            {filtered.map(r => (
-              <tr key={r.rank}>
-                <td><span style={{fontWeight:700, color:r.rank<=10?C.gold:"#f0fff0", fontSize:r.rank<=3?15:13}}>{r.rank<=3?["","🥇","🥈","🥉"][r.rank]:r.rank}</span></td>
-                <td style={{fontWeight:500, color:"#f0fff0"}}>{r.name}</td>
-                <td style={{color:C.muted}}>{r.country}</td>
-                <td style={{color:C.muted}}>{r.points}</td>
-                <td>{r.rank<=10 ? <span className="badge b-amber">Top 10 — limited</span> : <span className="badge b-gray">Unrestricted</span>}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      )}
+
+      {rankings && (
+        <>
+          <div style={{background:"#0c2744", border:"1px solid #1e4a7a", borderRadius:10, padding:"12px 16px", marginBottom:20, fontSize:13, color:"#60a5fa", lineHeight:1.6}}>
+            Players ranked <strong>1–10</strong> are flagged as Top 10. Each player may only include a maximum of <strong>2 top-10 ranked golfers</strong> in their main four picks.
+          </div>
+          <div className="card" style={{padding:0, overflow:"hidden"}}>
+            <table>
+              <thead><tr><th style={{width:60}}>Rank</th><th>Player</th><th style={{width:100}}>Country</th><th style={{width:110}}>OWGR Points</th><th style={{width:120}}>Pick Status</th></tr></thead>
+              <tbody>
+                {filtered.length === 0 && (
+                  <tr><td colSpan={5} style={{textAlign:"center", color:C.muted, padding:28}}>No results for "{search}"</td></tr>
+                )}
+                {filtered.map(r => (
+                  <tr key={r.rank}>
+                    <td><span style={{fontWeight:700, color:r.rank<=10?C.gold:"#f0fff0", fontSize:r.rank<=3?15:13}}>{r.rank<=3?["","🥇","🥈","🥉"][r.rank]:r.rank}</span></td>
+                    <td style={{fontWeight:500, color:"#f0fff0"}}>{r.name}</td>
+                    <td style={{color:C.muted}}>{r.country||"–"}</td>
+                    <td style={{color:C.muted}}>{r.points}</td>
+                    <td>{r.rank<=10 ? <span className="badge b-amber">Top 10 — limited</span> : <span className="badge b-gray">Unrestricted</span>}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -829,7 +930,15 @@ function MyPicksPage({user, leagues, saveLeagues, updateLeagueInDb, picks, saveP
   );
 
   const locked = tournament?.locked || false;
-  const field = tournament?.field || MOCK_FIELD;
+  // Player list always comes from uploaded OWGR rankings — top 200 is plenty
+  // Live field data is only used for scoring on the Standings page
+  const rankings = (tournament?.rankings || []).filter(r => r.rank <= 200);
+  const field = rankings.map(r => ({
+    id: r.rank,
+    name: r.name,
+    worldRank: r.rank,
+    pos: null, score: 0, thru: "-", cut: false,
+  }));
   const top10Count = selected.filter(n => { const g = field.find(f => f.name===n); return isTop10(g?.worldRank); }).length;
   const available = field.filter(g => !g.cut && g.name.toLowerCase().includes(search.toLowerCase()));
 
@@ -875,6 +984,11 @@ function MyPicksPage({user, leagues, saveLeagues, updateLeagueInDb, picks, saveP
       {!tournament?.name && (
         <div style={{background:"#3b2a00", border:"1px solid #92400e", borderRadius:10, padding:"12px 16px", marginBottom:20, fontSize:13, color:C.warning}}>
           No tournament set up for this league yet. Ask your admin to configure one.
+        </div>
+      )}
+      {tournament?.name && field.length === 0 && (
+        <div style={{background:"#3b2a00", border:"1px solid #92400e", borderRadius:10, padding:"12px 16px", marginBottom:20, fontSize:13, color:C.warning}}>
+          World rankings haven't been uploaded yet — the player list will appear once your admin uploads the OWGR CSV.
         </div>
       )}
       {locked && (
