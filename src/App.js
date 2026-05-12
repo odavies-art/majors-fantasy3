@@ -34,23 +34,29 @@ const db = {
   async deleteLeague(code){ await supabase.from("leagues").delete().eq("code", code); },
 
   async getTournaments(){ const {data} = await supabase.from("tournaments").select("*"); return data||[]; },
-  async upsertTournament(t){ await supabase.from("tournaments").upsert(t, {onConflict:"league_code"}); },
+  async upsertTournament(t){
+    const {error} = await supabase.from("tournaments").upsert(t, {onConflict:"league_code"});
+    if(error) throw new Error(`Tournament save failed: ${error.message}`);
+  },
 
   async getPicks(){ const {data} = await supabase.from("picks").select("*"); return data||[]; },
-  async upsertPick(p){ await supabase.from("picks").upsert(p, {onConflict:"pick_key"}); },
+  async upsertPick(p){
+    const {error} = await supabase.from("picks").upsert(p, {onConflict:"pick_key"});
+    if(error) throw new Error(`Pick save failed: ${error.message}`);
+  },
 
-  // Rankings: always a full replace — truncate then insert
+  // Rankings: always a full replace — delete all then insert fresh
   async getRankings(){
     const {data} = await supabase.from("rankings").select("*").order("rank", {ascending:true});
     return data||[];
   },
   async saveRankings(rows){
-    // Delete all then insert fresh — clean slate every upload
-    await supabase.from("rankings").delete().neq("rank", -99999);
+    const {error: delError} = await supabase.from("rankings").delete().gte("rank", 0);
+    if(delError) throw new Error(`Rankings delete failed: ${delError.message}`);
     if(rows.length === 0) return;
-    // Insert in batches of 500 to stay within Supabase limits
     for(let i = 0; i < rows.length; i += 500){
-      await supabase.from("rankings").insert(rows.slice(i, i + 500));
+      const {error: insError} = await supabase.from("rankings").insert(rows.slice(i, i + 500));
+      if(insError) throw new Error(`Rankings insert failed: ${insError.message}`);
     }
   },
 };
@@ -73,6 +79,11 @@ function tournamentToDb(code, t){
 
 function tournamentFromDb(row){
   if(!row) return DEFAULT_TOURNAMENT;
+  // Clear field if it looks like old mock data (mock entries have sequential numeric ids 1-35)
+  const rawField = row.field || [];
+  const isMockField = rawField.length > 0 && rawField.length <= 35 &&
+    rawField.every((p, i) => p.id === i + 1);
+  const field = isMockField ? [] : rawField;
   return {
     majorId:      row.major_id      || "",
     name:         row.name          || "",
@@ -83,7 +94,7 @@ function tournamentFromDb(row){
     cutLine:      row.cut_line      || null,
     locked:       row.locked        || false,
     lastUpdated:  row.last_updated  || null,
-    field:        row.field         || [],
+    field,
   };
 }
 
@@ -326,12 +337,13 @@ export default function App(){
   const [picks,            setPicks]            = useState({});
   const [leagues,          setLeagues]          = useState([]);
   const [tournaments,      setTournaments]      = useState({});
-  const [rankings,         setRankings]         = useState([]); // global, from rankings table
+  const [rankings,         setRankings]         = useState([]);
   const [currentUser,      setCurrentUser]      = useState(null);
   const [page,             setPage]             = useState("login");
   const [authMode,         setAuthMode]         = useState("login");
   const [activeLeagueCode, setActiveLeagueCode] = useState(null);
   const [loading,          setLoading]          = useState(true);
+  const [dbError,          setDbError]          = useState("");
 
   useEffect(() => {
     async function load(){
@@ -379,12 +391,22 @@ export default function App(){
 
   const updateTournament = async (code, t) => {
     setTournaments(prev => ({...prev, [code]: t}));
-    await db.upsertTournament(tournamentToDb(code, t));
+    try {
+      await db.upsertTournament(tournamentToDb(code, t));
+    } catch(e) {
+      console.error("updateTournament:", e.message);
+      setDbError(e.message);
+    }
   };
 
   const updateRankings = async (newRankings) => {
-    await db.saveRankings(newRankings);
-    setRankings(newRankings);
+    setRankings(newRankings); // update UI immediately
+    try {
+      await db.saveRankings(newRankings);
+    } catch(e) {
+      console.error("updateRankings:", e.message);
+      setDbError(e.message);
+    }
   };
 
   const isAdmin = currentUser?.role === "admin";
@@ -406,6 +428,12 @@ export default function App(){
     <><style>{CSS}</style>
     <div style={{minHeight:"100vh", display:"flex", flexDirection:"column"}}>
       <Header user={currentUser} isAdmin={isAdmin} page={page} setPage={setPage} onLogout={logout}/>
+      {dbError && (
+        <div style={{background:"#7f1d1d", color:"#fca5a5", padding:"10px 20px", fontSize:13, textAlign:"center", display:"flex", justifyContent:"space-between", alignItems:"center"}}>
+          <span>⚠ Database error: {dbError}</span>
+          <button onClick={() => setDbError("")} style={{background:"none", border:"none", color:"#fca5a5", cursor:"pointer", fontSize:18, lineHeight:1}}>×</button>
+        </div>
+      )}
       <main style={{flex:1, maxWidth:940, margin:"0 auto", width:"100%", padding:"24px 16px"}}>
         {page==="standings"   && <StandingsPage user={currentUser} leagues={leagues} saveLeagues={saveLeagues} updateLeagueInDb={updateLeagueInDb} picks={picks} tournaments={tournaments} rankings={rankings} activeLeagueCode={activeLeagueCode} setActiveLeagueCode={setActiveLeagueCode}/>}
         {page==="leaderboard" && <LeaderboardPage activeLeague={activeLeague} activeTournament={activeTournament} myLeagues={myLeagues} activeLeagueCode={activeLeagueCode} setActiveLeagueCode={setActiveLeagueCode}/>}
