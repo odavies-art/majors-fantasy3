@@ -7,7 +7,7 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-  const { tournamentId, apiKey, type } = req.query;
+  const { tournamentId, apiKey, type, tour, season } = req.query;
 
   if (!apiKey) {
     return res.status(400).json({ error: "Missing apiKey" });
@@ -19,10 +19,25 @@ export default async function handler(req, res) {
   };
 
   try {
-    // type=rankings fetches world rankings, otherwise fetches leaderboard
+    // type=rankings fetches world rankings
     if (type === "rankings") {
       const response = await fetch(
         "https://golf-leaderboard-data.p.rapidapi.com/world-rankings",
+        { headers }
+      );
+      if (!response.ok) {
+        return res.status(response.status).json({ error: `RapidAPI error ${response.status}` });
+      }
+      const data = await response.json();
+      return res.status(200).json(data);
+    }
+
+    // type=fixtures fetches tournament schedule
+    if (type === "fixtures") {
+      const t = tour || "pga";
+      const s = season || new Date().getFullYear();
+      const response = await fetch(
+        `https://golf-leaderboard-data.p.rapidapi.com/fixtures/${t}/${s}`,
         { headers }
       );
       if (!response.ok) {
