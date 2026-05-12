@@ -35,17 +35,18 @@ const db = {
 
   async getTournaments(){ const {data} = await supabase.from("tournaments").select("*"); return data||[]; },
   async upsertTournament(t){
-    // Try update first, then insert if no row exists
     const {data: existing} = await supabase
       .from("tournaments").select("id").eq("league_code", t.league_code).maybeSingle();
     if(existing){
+      // Don't include league_code in the update body — it's the filter key
+      const {league_code, ...updateData} = t;
       const {error} = await supabase
-        .from("tournaments").update(t).eq("league_code", t.league_code);
-      if(error) { alert("UPDATE ERROR: " + error.message); throw new Error(`Tournament update failed: ${error.message}`); }
+        .from("tournaments").update(updateData).eq("league_code", league_code);
+      if(error) throw new Error(`Tournament update failed: ${error.message}`);
     } else {
       const {error} = await supabase
         .from("tournaments").insert(t);
-      if(error) { alert("INSERT ERROR: " + error.message); throw new Error(`Tournament insert failed: ${error.message}`); }
+      if(error) throw new Error(`Tournament insert failed: ${error.message}`);
     }
   },
 
@@ -360,16 +361,6 @@ export default function App(){
 
   useEffect(() => {
     async function load(){
-      // Quick write test — insert then delete a dummy row to verify RLS allows writes
-      const testKey = "__test__";
-      const {error: testError} = await supabase.from("tournaments")
-        .upsert({league_code: testKey, name:"test"}, {onConflict:"league_code"});
-      if(testError){
-        setDbError(`Supabase write permission error: ${testError.message}. Run the RLS policy SQL in Supabase → SQL Editor.`);
-      } else {
-        await supabase.from("tournaments").delete().eq("league_code", testKey);
-      }
-
       const [dbUsers, dbLeagues, dbTournaments, dbPicks, dbRankings] = await Promise.all([
         db.getUsers(), db.getLeagues(), db.getTournaments(), db.getPicks(), db.getRankings(),
       ]);
@@ -414,7 +405,7 @@ export default function App(){
 
   const updateTournament = async (code, t) => {
     setTournaments(prev => ({...prev, [code]: t}));
-    await db.upsertTournament(tournamentToDb(code, t)); // throws on failure — caught by caller
+    await db.upsertTournament(tournamentToDb(code, t));
   };
 
   const updateRankings = async (newRankings) => {
@@ -1130,8 +1121,8 @@ function AdminPage({users, setUsers, leagues, saveLeagues, tournaments, updateTo
                   {leagues.map(l => <option key={l.code} value={l.code}>{l.name}</option>)}
                 </select>
               </div>
-              {tab==="tournament" && selectedLeague && <TournamentSetup league={selectedLeague} tournament={selectedTournament||DEFAULT_TOURNAMENT} onSave={t => updateTournament(selectedLeague.code, t)}/>}
-              {tab==="livedata"   && selectedLeague && <LiveDataPanel league={selectedLeague} tournament={selectedTournament||DEFAULT_TOURNAMENT} rankings={rankings} onSaveTournament={t => updateTournament(selectedLeague.code, t)} onSaveRankings={updateRankings}/>}
+              {tab==="tournament" && selectedLeague && <TournamentSetup league={selectedLeague} tournament={selectedTournament||DEFAULT_TOURNAMENT} onSave={async t => { await updateTournament(selectedLeague.code, t); }}/>}
+              {tab==="livedata"   && selectedLeague && <LiveDataPanel league={selectedLeague} tournament={selectedTournament||DEFAULT_TOURNAMENT} rankings={rankings} onSaveTournament={async t => { await updateTournament(selectedLeague.code, t); }} onSaveRankings={async r => { await updateRankings(r); }}/>}
             </>
       )}
       {tab==="users" && <UsersTab users={users} setUsers={setUsers} leagues={leagues}/>}
