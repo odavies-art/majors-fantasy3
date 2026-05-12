@@ -919,7 +919,8 @@ function LeaguesTab({leagues,saveLeagues,selectedLeagueCode,setSelectedLeagueCod
   };
 
   const deleteLeague=code=>{
-    if(!confirm("Delete this league? All picks for this league will be lost."))return;
+    const ok=window.confirm("Delete this league? All picks for this league will be lost.");
+    if(!ok)return;
     saveLeagues(leagues.filter(l=>l.code!==code));
     if(selectedLeagueCode===code) setSelectedLeagueCode(leagues[0]?.code||null);
   };
@@ -1127,13 +1128,13 @@ function LiveDataPanel({league,tournament,onSave}){
 
 function UsersTab({users,saveUsers,leagues}){
   const promote=username=>{
-    if(!confirm(`Promote ${username} to admin?`))return;
+    if(!window.confirm(`Promote ${username} to admin?`))return;
     saveUsers(users.map(u=>u.username===username?{...u,role:"admin"}:u));
   };
   const demote=username=>{
     const admins=users.filter(u=>u.role==="admin");
-    if(admins.length<=1){alert("Cannot remove the last admin.");return;}
-    if(!confirm(`Remove admin from ${username}?`))return;
+    if(admins.length<=1){window.alert("Cannot remove the last admin.");return;}
+    if(!window.confirm(`Remove admin from ${username}?`))return;
     saveUsers(users.map(u=>u.username===username?{...u,role:"member"}:u));
   };
 
