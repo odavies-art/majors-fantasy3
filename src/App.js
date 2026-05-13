@@ -572,6 +572,8 @@ function StandingsPage({user, leagues, saveLeagues, updateLeagueInDb, picks, tou
   const myLeagues = leagues.filter(l => l.members.includes(user.username));
   const activeLeague = myLeagues.find(l => l.code === activeLeagueCode) || null;
   const tournament = activeLeague ? (tournaments[activeLeague.code] || DEFAULT_TOURNAMENT) : null;
+  // Hook must be called before any early returns
+  const countdown = useCountdown(tournament?.date ? `${tournament.date}T07:00:00` : null);
 
   if(myLeagues.length === 0) return (
     <div className="fade">
@@ -580,12 +582,10 @@ function StandingsPage({user, leagues, saveLeagues, updateLeagueInDb, picks, tou
     </div>
   );
 
-  // field is the live ESPN snapshot — only meaningful during/after tournament
   const field   = tournament?.field || [];
   const cutLine = tournament?.cutLine;
   const members = activeLeague?.members || [];
   const hasLiveScores = field.length > 0;
-  const countdown = useCountdown(tournament?.date ? `${tournament.date}T07:00:00` : null);
 
   const scored = members.map(username => {
     const pickKey = `${activeLeague.code}:${username}`;
