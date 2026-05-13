@@ -322,9 +322,11 @@ tr:last-child td{border-bottom:none;}
 .empty-state{text-align:center;padding:60px 20px;}
 .loading{display:flex;align-items:center;justify-content:center;min-height:100vh;background:${C.bg};color:${C.muted};font-size:16px;font-family:'DM Sans',sans-serif;}
 .table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.show-mobile{display:none;}
 
 /* ── Mobile ── */
 @media(max-width:600px){
+  .show-mobile{display:inline;}
   .nav-tab{padding:7px 11px;font-size:12px;}
   .page-title{font-size:20px;}
   .card{padding:14px;}
@@ -1107,9 +1109,12 @@ function MyPicksPage({user, leagues, saveLeagues, updateLeagueInDb, picks, saveP
                             onClick={() => toggleMain(p.name)}
                           >{inMain ? "Remove" : "Pick"}</button>
                           <button
-                            style={{background: inTB?"#451a03":canTB?C.card:C.surface, color: inTB?C.gold:canTB?"#f0fff0":C.muted, border:`1px solid ${inTB?"#92400e":C.border}`, borderRadius:6, padding:"4px 10px", fontSize:12, cursor:canTB||inTB?"pointer":"default"}}
+                            style={{background: inTB?"#451a03":canTB?C.card:C.surface, color: inTB?C.gold:canTB?"#f0fff0":C.muted, border:`1px solid ${inTB?"#92400e":C.border}`, borderRadius:6, padding:"4px 10px", fontSize:12, cursor:canTB||inTB?"pointer":"default", whiteSpace:"nowrap"}}
                             onClick={() => toggleTB(p.name)}
-                          >{inTB ? "Remove TB" : "Tiebreaker"}</button>
+                          >
+                            <span className="hide-mobile">{inTB ? "Remove TB" : "Tiebreaker"}</span>
+                            <span className="show-mobile">{inTB ? "✕ TB" : "TB"}</span>
+                          </button>
                         </div>
                       </td>
                     </tr>
