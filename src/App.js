@@ -395,13 +395,19 @@ export default function App(){
   };
 
   const updateTournament = async (code, t) => {
+    console.log("1. updateTournament called, code:", code);
     setTournaments(prev => ({...prev, [code]: t}));
-    await db.upsertTournament(tournamentToDb(code, t));
+    const payload = tournamentToDb(code, t);
+    console.log("2. payload:", JSON.stringify(payload));
+    await db.upsertTournament(payload);
+    console.log("3. upsertTournament complete");
   };
 
   const updateRankings = async (newRankings) => {
+    console.log("1. updateRankings called, rows:", newRankings.length);
     setRankings(newRankings);
-    await db.saveRankings(newRankings); // throws on failure — caught by caller
+    await db.saveRankings(newRankings);
+    console.log("2. saveRankings complete");
   };
 
   const isAdmin = currentUser?.role === "admin";
