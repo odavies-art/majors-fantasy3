@@ -273,13 +273,14 @@ const C = {
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap');
 *{box-sizing:border-box;margin:0;padding:0;}
+html{-webkit-text-size-adjust:100%;}
 body{background:${C.bg};color:${C.text};font-family:'DM Sans',sans-serif;min-height:100vh;}
 input,select{background:${C.card};border:1px solid ${C.border};color:${C.text};padding:10px 14px;border-radius:8px;font-family:inherit;font-size:14px;width:100%;outline:none;transition:border .2s;}
 input:focus,select:focus{border-color:${C.accentDim};}
 input::placeholder{color:${C.muted};}
 button{cursor:pointer;font-family:inherit;border:none;border-radius:8px;font-size:14px;font-weight:500;transition:all .15s;}
 ::-webkit-scrollbar{width:5px;}::-webkit-scrollbar-track{background:${C.bg};}::-webkit-scrollbar-thumb{background:${C.border};border-radius:3px;}
-.nav-tab{background:#1f3020;color:#f0fff0;padding:8px 18px;border-radius:20px;font-size:13px;font-weight:600;border:1px solid #4a6a4a;transition:all .15s;}
+.nav-tab{background:#1f3020;color:#f0fff0;padding:8px 14px;border-radius:20px;font-size:13px;font-weight:600;border:1px solid #4a6a4a;transition:all .15s;white-space:nowrap;}
 .nav-tab:hover{background:#2a4a2a;border-color:#5a8a5a;}
 .nav-tab.active{background:${C.accent};color:#061006;border-color:${C.accent};}
 .btn-primary{background:${C.accent};color:#061006;padding:11px 22px;font-weight:600;}
@@ -320,6 +321,22 @@ tr:last-child td{border-bottom:none;}
 .code-pill{font-family:monospace;background:#0c2744;color:#60a5fa;padding:4px 10px;border-radius:6px;font-size:13px;font-weight:700;letter-spacing:1px;}
 .empty-state{text-align:center;padding:60px 20px;}
 .loading{display:flex;align-items:center;justify-content:center;min-height:100vh;background:${C.bg};color:${C.muted};font-size:16px;font-family:'DM Sans',sans-serif;}
+.table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+
+/* ── Mobile ── */
+@media(max-width:600px){
+  .nav-tab{padding:7px 11px;font-size:12px;}
+  .page-title{font-size:20px;}
+  .card{padding:14px;}
+  td,th{padding:8px 8px;}
+  table{font-size:12px;}
+  .btn-primary,.btn-secondary{padding:10px 16px;font-size:13px;}
+  .form-grid{grid-template-columns:1fr !important;}
+  .stats-grid{grid-template-columns:1fr 1fr !important;}
+  .picks-grid{grid-template-columns:1fr !important;}
+  .hide-mobile{display:none !important;}
+  .league-select{min-width:120px;}
+}
 `;
 
 // ─── Countdown hook ───────────────────────────────────────────────────────────
@@ -418,17 +435,28 @@ export default function App(){
   const activeTournament = activeLeague ? (tournaments[activeLeague.code] || DEFAULT_TOURNAMENT) : null;
   const logout = () => { setCurrentUser(null); setPage("login"); setActiveLeagueCode(null); };
 
-  if(loading) return <><style>{CSS}</style><div className="loading">Loading…</div></>;
+  if(loading) return (
+    <>
+      <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+      <style>{CSS}</style>
+      <div className="loading">Loading…</div>
+    </>
+  );
 
   if(page === "login") return (
-    <><style>{CSS}</style>
-    <AuthPage users={users} setUsers={setUsers} authMode={authMode} setAuthMode={setAuthMode}
-      onLogin={u => { setCurrentUser(u); setPage("standings"); }}
-    /></>
+    <>
+      <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+      <style>{CSS}</style>
+      <AuthPage users={users} setUsers={setUsers} authMode={authMode} setAuthMode={setAuthMode}
+        onLogin={u => { setCurrentUser(u); setPage("standings"); }}
+      />
+    </>
   );
 
   return (
-    <><style>{CSS}</style>
+    <>
+      <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+      <style>{CSS}</style>
     <div style={{minHeight:"100vh", display:"flex", flexDirection:"column"}}>
       <Header user={currentUser} isAdmin={isAdmin} page={page} setPage={setPage} onLogout={logout}/>
       {dbError && (
@@ -453,23 +481,27 @@ function Header({user, isAdmin, page, setPage, onLogout}){
   const tabs = [
     {id:"standings",   label:"Standings"},
     {id:"leaderboard", label:"Leaderboard"},
-    {id:"rankings",    label:"World Rankings"},
+    {id:"rankings",    label:"Rankings"},
     {id:"picks",       label:"My Picks"},
     {id:"admin",       label:"Admin", adminOnly:true},
   ].filter(t => !t.adminOnly || isAdmin);
 
   return (
     <header style={{background:C.surface, borderBottom:`1px solid ${C.border}`, position:"sticky", top:0, zIndex:100}}>
-      <div style={{maxWidth:940, margin:"0 auto", padding:"0 16px", display:"flex", alignItems:"center", justifyContent:"space-between", height:60, gap:12}}>
-        <span style={{fontFamily:"'Playfair Display',serif", fontWeight:900, fontSize:20, color:C.accent, flexShrink:0}}>⛳ Majors</span>
-        <nav style={{display:"flex", gap:6, flexWrap:"wrap"}}>
+      {/* Top row: logo + sign out */}
+      <div style={{maxWidth:940, margin:"0 auto", padding:"0 16px", display:"flex", alignItems:"center", justifyContent:"space-between", height:48}}>
+        <span style={{fontFamily:"'Playfair Display',serif", fontWeight:900, fontSize:18, color:C.accent, flexShrink:0}}>⛳ Majors</span>
+        <button className="btn-ghost" style={{padding:"5px 12px", fontSize:12, flexShrink:0}} onClick={onLogout}>
+          {user?.username} · Sign out
+        </button>
+      </div>
+      {/* Nav row: scrollable on mobile */}
+      <div style={{overflowX:"auto", WebkitOverflowScrolling:"touch", scrollbarWidth:"none"}}>
+        <div style={{display:"flex", gap:6, padding:"0 16px 10px", width:"max-content", minWidth:"100%"}}>
           {tabs.map(t => (
             <button key={t.id} className={`nav-tab${page===t.id?" active":""}`} onClick={() => setPage(t.id)}>{t.label}</button>
           ))}
-        </nav>
-        <button className="btn-ghost" style={{padding:"6px 14px", fontSize:13, flexShrink:0}} onClick={onLogout}>
-          {user?.username} · Sign out
-        </button>
+        </div>
       </div>
     </header>
   );
@@ -807,10 +839,10 @@ function LeaderboardPage({activeLeague, activeTournament, myLeagues, activeLeagu
 
       {/* Live leaderboard */}
       {hasField && (
-        <div className="card" style={{padding:0, overflow:"hidden"}}>
+        <div className="card table-scroll" style={{padding:0, overflow:"hidden"}}>
           <table>
             <thead>
-              <tr><th style={{width:50}}>Pos</th><th>Golfer</th><th style={{width:80}}>Score</th><th style={{width:60}}>Thru</th><th style={{width:90}}>OWGR</th></tr>
+              <tr><th style={{width:50}}>Pos</th><th>Golfer</th><th style={{width:80}}>Score</th><th className="hide-mobile" style={{width:60}}>Thru</th><th className="hide-mobile" style={{width:90}}>OWGR</th></tr>
             </thead>
             <tbody>
               {sorted.length === 0 && (
@@ -826,8 +858,8 @@ function LeaderboardPage({activeLeague, activeTournament, myLeagues, activeLeagu
                   <td style={{fontWeight:700, color:g.cut?C.muted:g.score<0?C.accent:g.score>0?C.danger:"#f0fff0"}}>
                     {g.cut ? "–" : g.score===0 ? "E" : g.score>0 ? `+${g.score}` : g.score}
                   </td>
-                  <td style={{color:C.muted}}>{g.thru}</td>
-                  <td style={{color:isTop10(g.worldRank)?C.gold:C.muted, fontWeight:isTop10(g.worldRank)?600:400}}>
+                  <td className="hide-mobile" style={{color:C.muted}}>{g.thru}</td>
+                  <td className="hide-mobile" style={{color:isTop10(g.worldRank)?C.gold:C.muted, fontWeight:isTop10(g.worldRank)?600:400}}>
                     {g.worldRank && g.worldRank < 999 ? `#${g.worldRank}` : "–"}
                   </td>
                 </tr>
@@ -879,10 +911,10 @@ function RankingsPage({rankings}){
           <div style={{background:"#0c2744", border:"1px solid #1e4a7a", borderRadius:10, padding:"12px 16px", marginBottom:20, fontSize:13, color:"#60a5fa", lineHeight:1.6}}>
             Players ranked <strong>1–10</strong> are flagged as Top 10. Each player may only include a maximum of <strong>2 top-10 ranked golfers</strong> in their main four picks.
           </div>
-          <div className="card" style={{padding:0, overflow:"hidden"}}>
+          <div className="card table-scroll" style={{padding:0, overflow:"hidden"}}>
             <table>
               <thead>
-                <tr><th style={{width:60}}>Rank</th><th>Player</th><th style={{width:110}}>Country</th><th style={{width:110}}>Avg Points</th><th style={{width:120}}>Pick Status</th></tr>
+                <tr><th style={{width:60}}>Rank</th><th>Player</th><th className="hide-mobile" style={{width:110}}>Country</th><th className="hide-mobile" style={{width:110}}>Avg Points</th><th style={{width:120}}>Pick Status</th></tr>
               </thead>
               <tbody>
                 {filtered.length === 0 && (
@@ -892,8 +924,8 @@ function RankingsPage({rankings}){
                   <tr key={r.rank}>
                     <td><span style={{fontWeight:700, color:r.rank<=10?C.gold:"#f0fff0", fontSize:r.rank<=3?15:13}}>{r.rank<=3?["","🥇","🥈","🥉"][r.rank]:r.rank}</span></td>
                     <td style={{fontWeight:500, color:"#f0fff0"}}>{r.name}</td>
-                    <td style={{color:C.muted}}>{r.country||"–"}</td>
-                    <td style={{color:C.muted}}>{r.points}</td>
+                    <td className="hide-mobile" style={{color:C.muted}}>{r.country||"–"}</td>
+                    <td className="hide-mobile" style={{color:C.muted}}>{r.points}</td>
                     <td>{r.rank<=10 ? <span className="badge b-amber">Top 10 — limited</span> : <span className="badge b-gray">Unrestricted</span>}</td>
                   </tr>
                 ))}
@@ -1012,7 +1044,7 @@ function MyPicksPage({user, leagues, saveLeagues, updateLeagueInDb, picks, saveP
         </div>
       )}
 
-      <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:20}}>
+      <div className="picks-grid" style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:20}}>
         <div className="card">
           <div style={{fontSize:11, color:C.muted, textTransform:"uppercase", letterSpacing:".8px", marginBottom:8}}>Main Picks ({selected.length}/4)</div>
           <div style={{fontSize:12, color:C.muted, marginBottom:12}}>Top 10 world ranking: {top10Count}/2 used</div>
@@ -1254,7 +1286,7 @@ function TournamentSetup({league, tournament, onSave}){
         <span className="code-pill">{league.code}</span>
         <span style={{marginLeft:"auto"}} className={`badge ${locked?"b-red":"b-green"}`}>{locked?"🔒 Picks locked":"🔓 Picks open"}</span>
       </div>
-      <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:18, marginBottom:20}}>
+      <div className="form-grid" style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:18, marginBottom:20}}>
         <div>
           <label className="form-label">Select Major</label>
           <select value={form.majorId} onChange={f("majorId")}>
@@ -1361,7 +1393,7 @@ function LiveDataPanel({league, tournament, rankings, onSaveTournament, onSaveRa
 
   return (
     <div>
-      <div style={{display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:10, marginBottom:20}}>
+      <div className="stats-grid" style={{display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:10, marginBottom:20}}>
         {stats.map(s => (
           <div key={s.label} style={{background:C.card, border:`1px solid ${C.border}`, borderRadius:10, padding:"12px 16px"}}>
             <div style={{fontSize:11, color:C.muted, textTransform:"uppercase", letterSpacing:".6px", marginBottom:6}}>{s.label}</div>
@@ -1427,7 +1459,7 @@ function UsersTab({users, setUsers, leagues}){
       <div style={{background:"#0c2744", border:"1px solid #1e4a7a", borderRadius:10, padding:"12px 16px", marginBottom:20, fontSize:13, color:"#60a5fa", lineHeight:1.6}}>
         The first account created is automatically admin. Promote others here. At least one admin must always exist.
       </div>
-      <div className="card" style={{padding:0, overflow:"hidden"}}>
+      <div className="card table-scroll" style={{padding:0, overflow:"hidden"}}>
         <table>
           <thead><tr><th>Username</th><th>Role</th><th>Leagues</th><th style={{width:130}}>Actions</th></tr></thead>
           <tbody>
