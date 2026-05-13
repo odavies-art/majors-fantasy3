@@ -59,8 +59,8 @@ const db = {
     if(rows.length === 0) return;
     for(let i = 0; i < rows.length; i += 500){
       const {error: insError} = await supabase
-        .from("rankings").insert(rows.slice(i, i + 500));
-      if(insError) throw new Error(`Rankings insert failed (batch ${i/500+1}): ${insError.message}`);
+        .from("rankings").upsert(rows.slice(i, i + 500), {onConflict:"rank"});
+      if(insError) throw new Error(`Rankings save failed (batch ${i/500+1}): ${insError.message}`);
     }
   },
 };
@@ -251,7 +251,16 @@ function parseOwgrCsv(csvText){
   }
 
   if(rankings.length === 0) throw new Error("No ranked players found in CSV.");
-  return rankings;
+
+  // Deduplicate by rank — keep first occurrence (CSV is ordered so first is correct)
+  const seen = new Set();
+  const deduped = rankings.filter(r => {
+    if(seen.has(r.rank)) return false;
+    seen.add(r.rank);
+    return true;
+  });
+
+  return deduped;
 }
 
 // ─── Theme ────────────────────────────────────────────────────────────────────
