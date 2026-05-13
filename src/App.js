@@ -584,6 +584,8 @@ function StandingsPage({user, leagues, saveLeagues, updateLeagueInDb, picks, tou
   const field   = tournament?.field || [];
   const cutLine = tournament?.cutLine;
   const members = activeLeague?.members || [];
+  const hasLiveScores = field.length > 0;
+  const countdown = useCountdown(tournament?.date ? `${tournament.date}T07:00:00` : null);
 
   const scored = members.map(username => {
     const pickKey = `${activeLeague.code}:${username}`;
@@ -633,15 +635,23 @@ function StandingsPage({user, leagues, saveLeagues, updateLeagueInDb, picks, tou
         </div>
       )}
       {tournament?.name && field.length === 0 && (
-        <div style={{background:C.card, border:`1px solid ${C.border}`, borderRadius:10, padding:"12px 16px", marginBottom:20, fontSize:13, color:C.muted}}>
-          Tournament hasn't started yet — scores will appear here once live data is fetched.
+        <div style={{background:C.card, border:`1px solid ${C.border}`, borderRadius:12, padding:"20px 24px", marginBottom:20, display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:12}}>
+          <div style={{fontSize:13, color:C.muted}}>
+            🔒 Picks are hidden until the tournament starts
+          </div>
+          {countdown && (
+            <div style={{display:"flex", alignItems:"center", gap:10}}>
+              <span style={{fontSize:12, color:C.muted, textTransform:"uppercase", letterSpacing:".6px"}}>Starts in</span>
+              <span style={{fontFamily:"'Playfair Display',serif", fontSize:20, fontWeight:700, color:C.accent}}>{countdown}</span>
+            </div>
+          )}
         </div>
       )}
 
       {ranked.length === 0
         ? <div className="empty-state"><p style={{color:C.muted}}>No picks submitted yet.</p></div>
         : <div style={{display:"flex", flexDirection:"column", gap:10}}>
-            {ranked.map(p => <StandingsCard key={p.username} player={p} field={field} tournament={tournament} isCurrentUser={p.username===user.username}/>)}
+            {ranked.map(p => <StandingsCard key={p.username} player={p} field={field} tournament={tournament} isCurrentUser={p.username===user.username} picksVisible={field.length > 0}/>)}
           </div>
       }
       <div style={{marginTop:20, textAlign:"center"}}>
@@ -661,26 +671,31 @@ function StandingsPage({user, leagues, saveLeagues, updateLeagueInDb, picks, tou
   );
 }
 
-function StandingsCard({player, field, tournament, isCurrentUser}){
+function StandingsCard({player, field, tournament, isCurrentUser, picksVisible}){
   const [open, setOpen] = useState(false);
   const has = player.picks?.mains?.length > 0;
   const medals = ["","🥇","🥈","🥉"];
   const cutLine = tournament?.cutLine;
   const hasLiveScores = field.length > 0;
+  // Show picks if: tournament has started (live scores exist) OR it's your own card
+  const canSeePicks = picksVisible || isCurrentUser;
 
   return (
-    <div className="card" style={{cursor:"pointer", borderColor:open?C.accentDim:isCurrentUser?"#2a4a2a":C.border, transition:"border-color .2s"}} onClick={() => setOpen(o => !o)}>
+    <div className="card" style={{cursor: canSeePicks && has ? "pointer" : "default", borderColor:open?C.accentDim:isCurrentUser?"#2a4a2a":C.border, transition:"border-color .2s"}} onClick={() => canSeePicks && has && setOpen(o => !o)}>
       <div style={{display:"flex", alignItems:"center", gap:12}}>
-        <div style={{width:32, height:32, borderRadius:"50%", background:player.rank<=3?"#1a2a0a":C.surface, display:"flex", alignItems:"center", justifyContent:"center", fontWeight:700, fontSize:player.rank<=3?18:13, color:player.rank<=3?C.accent:C.muted, flexShrink:0}}>
-          {player.rank<=3 ? medals[player.rank] : player.rank}
+        <div style={{width:32, height:32, borderRadius:"50%", background:player.rank<=3&&hasLiveScores?"#1a2a0a":C.surface, display:"flex", alignItems:"center", justifyContent:"center", fontWeight:700, fontSize:player.rank<=3&&hasLiveScores?18:13, color:player.rank<=3&&hasLiveScores?C.accent:C.muted, flexShrink:0}}>
+          {player.rank<=3 && hasLiveScores ? medals[player.rank] : "–"}
         </div>
         <div style={{flex:1}}>
           <div style={{fontWeight:600, fontSize:15, color:"#f0fff0", display:"flex", alignItems:"center", gap:8}}>
             {player.username}
             {isCurrentUser && <span className="badge b-blue">You</span>}
           </div>
-          {has && <div style={{fontSize:12, color:C.muted, marginTop:2}}>{player.picks.mains.join(" · ")}</div>}
-          {!has && <div style={{fontSize:12, color:C.muted}}>No picks submitted</div>}
+          {/* Show picks summary only if visible */}
+          {canSeePicks && has && <div style={{fontSize:12, color:C.muted, marginTop:2}}>{player.picks.mains.join(" · ")}</div>}
+          {canSeePicks && !has && <div style={{fontSize:12, color:C.muted}}>No picks submitted</div>}
+          {!canSeePicks && has && <div style={{fontSize:12, color:C.muted}}>Picks hidden until tournament starts</div>}
+          {!canSeePicks && !has && <div style={{fontSize:12, color:C.muted}}>No picks submitted</div>}
         </div>
         <div style={{textAlign:"right"}}>
           <div style={{fontSize:22, fontWeight:700, color:has&&hasLiveScores?C.accent:C.muted, fontFamily:"'Playfair Display',serif"}}>
@@ -688,9 +703,9 @@ function StandingsCard({player, field, tournament, isCurrentUser}){
           </div>
           <div style={{fontSize:11, color:C.muted}}>{hasLiveScores ? "total pos." : "awaiting"}</div>
         </div>
-        <span style={{color:C.muted, fontSize:12, marginLeft:4}}>{open?"▲":"▼"}</span>
+        {canSeePicks && has && <span style={{color:C.muted, fontSize:12, marginLeft:4}}>{open?"▲":"▼"}</span>}
       </div>
-      {open && has && (
+      {open && has && canSeePicks && (
         <div style={{marginTop:14, paddingTop:14, borderTop:`1px solid ${C.border}`}}>
           <div style={{fontSize:11, color:C.muted, textTransform:"uppercase", letterSpacing:".8px", marginBottom:10}}>Picks & Positions</div>
           <div style={{display:"flex", flexWrap:"wrap", gap:8, marginBottom:10}}>
