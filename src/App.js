@@ -35,19 +35,10 @@ const db = {
 
   async getTournaments(){ const {data} = await supabase.from("tournaments").select("*"); return data||[]; },
   async upsertTournament(t){
-    const {data: existing} = await supabase
-      .from("tournaments").select("id").eq("league_code", t.league_code).maybeSingle();
-    if(existing){
-      // Don't include league_code in the update body — it's the filter key
-      const {league_code, ...updateData} = t;
-      const {error} = await supabase
-        .from("tournaments").update(updateData).eq("league_code", league_code);
-      if(error) throw new Error(`Tournament update failed: ${error.message}`);
-    } else {
-      const {error} = await supabase
-        .from("tournaments").insert(t);
-      if(error) throw new Error(`Tournament insert failed: ${error.message}`);
-    }
+    const {error} = await supabase
+      .from("tournaments")
+      .upsert(t, {onConflict:"league_code", ignoreDuplicates:false});
+    if(error) throw new Error(`Tournament save failed: ${error.message} | code: ${error.code} | details: ${error.details}`);
   },
 
   async getPicks(){ const {data} = await supabase.from("picks").select("*"); return data||[]; },
