@@ -53,9 +53,8 @@ const db = {
     return data||[];
   },
   async saveRankings(rows){
-    // Delete existing rows then insert fresh
     const {error: delError} = await supabase
-      .from("rankings").delete().not("rank", "is", null);
+      .from("rankings").delete().gte("rank", 1);
     if(delError) throw new Error(`Rankings delete failed: ${delError.message}`);
     if(rows.length === 0) return;
     for(let i = 0; i < rows.length; i += 500){
@@ -395,19 +394,13 @@ export default function App(){
   };
 
   const updateTournament = async (code, t) => {
-    console.log("1. updateTournament called, code:", code);
     setTournaments(prev => ({...prev, [code]: t}));
-    const payload = tournamentToDb(code, t);
-    console.log("2. payload:", JSON.stringify(payload));
-    await db.upsertTournament(payload);
-    console.log("3. upsertTournament complete");
+    await db.upsertTournament(tournamentToDb(code, t));
   };
 
   const updateRankings = async (newRankings) => {
-    console.log("1. updateRankings called, rows:", newRankings.length);
     setRankings(newRankings);
     await db.saveRankings(newRankings);
-    console.log("2. saveRankings complete");
   };
 
   const isAdmin = currentUser?.role === "admin";
