@@ -497,9 +497,9 @@ function Header({user, isAdmin, page, setPage, onLogout}){
           {user?.username} · Sign out
         </button>
       </div>
-      {/* Nav row: scrollable on mobile */}
+      {/* Nav row: centred on desktop, scrollable on mobile */}
       <div style={{overflowX:"auto", WebkitOverflowScrolling:"touch", scrollbarWidth:"none"}}>
-        <div style={{display:"flex", gap:6, padding:"0 16px 10px", width:"max-content", minWidth:"100%"}}>
+        <div style={{display:"flex", gap:6, padding:"0 16px 10px", justifyContent:"center", minWidth:"max-content", margin:"0 auto"}}>
           {tabs.map(t => (
             <button key={t.id} className={`nav-tab${page===t.id?" active":""}`} onClick={() => setPage(t.id)}>{t.label}</button>
           ))}
