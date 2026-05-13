@@ -585,7 +585,6 @@ function StandingsPage({user, leagues, saveLeagues, updateLeagueInDb, picks, tou
   const field   = tournament?.field || [];
   const cutLine = tournament?.cutLine;
   const members = activeLeague?.members || [];
-  const hasLiveScores = field.length > 0;
 
   const scored = members.map(username => {
     const pickKey = `${activeLeague.code}:${username}`;
