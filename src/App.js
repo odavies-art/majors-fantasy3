@@ -7,12 +7,11 @@ const supabase = createClient(
 );
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-// ESPN tournament IDs for 2026 season — update each season
 const MAJORS = [
-  {id:"401811941", name:"The Masters",           course:"Augusta National Golf Club"},
-  {id:"401811947", name:"PGA Championship",      course:"Aronimink Golf Club"},
-  {id:"401811952", name:"US Open",               course:"Oakmont Country Club"},
-  {id:"401811957", name:"The Open Championship", course:"Royal Portrush"},
+  {id:"401811941", name:"The Masters",           course:"Augusta National Golf Club",  orgId:"1", tournId:"014"},
+  {id:"401811947", name:"PGA Championship",      course:"Aronimink Golf Club",          orgId:"1", tournId:"033"},
+  {id:"401811952", name:"US Open",               course:"Oakmont Country Club",         orgId:"1", tournId:"026"},
+  {id:"401811957", name:"The Open Championship", course:"Royal Portrush",               orgId:"1", tournId:"100"},
 ];
 
 const DEFAULT_TOURNAMENT = {
@@ -155,48 +154,58 @@ function calcScore(picks, field, cutLine){
   return {total, breakdown};
 }
 
-// ─── ESPN leaderboard fetch (via Vercel proxy to handle CORS) ────────────────
-async function fetchLiveData(majorId, rankings){
-  const res = await fetch(`/api/golf?tournamentId=${majorId}`);
+// ─── Slash Golf leaderboard fetch (via Vercel proxy) ─────────────────────────
+async function fetchLiveData(major, rankings){
+  const year = new Date().getFullYear();
+  const res = await fetch(`/api/golf?orgId=${major.orgId}&tournId=${major.tournId}&year=${year}`);
   if(!res.ok){
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || `ESPN API ${res.status}${err.detail ? `: ${err.detail}` : ""}`);
+    throw new Error(err.error || `API ${res.status}${err.detail ? `: ${err.detail}` : ""}`);
   }
   const data = await res.json();
-  const competitors = data?.events?.[0]?.competitions?.[0]?.competitors || [];
-  if(competitors.length === 0) throw new Error("No competitors found — tournament may not have started yet.");
+  const rows = data?.leaderboardRows || [];
+  if(rows.length === 0) throw new Error("No leaderboard data — tournament may not have started yet.");
 
-  const field = competitors.map((c, i) => {
-    const athlete = c.athlete || {};
-    const status  = c.status  || {};
+  // Unwrap MongoDB extended JSON numbers
+  const num = v => {
+    if(v === null || v === undefined) return null;
+    if(typeof v === "number") return v;
+    if(typeof v === "object" && v.$numberInt !== undefined) return parseInt(v.$numberInt);
+    if(typeof v === "object" && v.$numberLong !== undefined) return parseInt(v.$numberLong);
+    return parseInt(v) || null;
+  };
 
-    const scoreStr = c.score || "E";
-    const score    = scoreStr === "E" ? 0 : (parseInt(scoreStr) || 0);
+  const field = rows.map((p, i) => {
+    const name = `${p.firstName} ${p.lastName}`.trim();
 
-    const posStr = c.sortOrder || c.position?.displayName || "";
-    const pos    = parseInt(posStr) || null;
+    // Score relative to par: "-5", "E", "+2", or "-" if not started
+    const scoreStr = p.total || "";
+    let score = 0;
+    if(!scoreStr || scoreStr === "-") score = 0;
+    else if(scoreStr === "E") score = 0;
+    else score = parseInt(scoreStr) || 0;
 
-    const thruVal = status.thru || status.period || 0;
-    const thru    = status.type?.description === "Final" ? "F"
-                  : thruVal === 0 ? "-" : `${thruVal}`;
+    // Position: strip "T" prefix e.g. "T5" → 5, "-" → null
+    const posStr = (p.position || "").replace(/^T/, "");
+    const pos = posStr === "-" || posStr === "" ? null : (parseInt(posStr) || null);
 
-    const isCut = status.type?.name === "STATUS_MISSED_CUT"
-               || status.type?.name === "STATUS_CUT"
-               || (status.type?.name||"").includes("CUT");
-    const isOut = status.type?.name === "STATUS_WITHDRAWN"
-               || status.type?.name === "STATUS_DQ"
-               || isCut;
+    // Thru: show tee time if not started, hole number if playing, F if done
+    const thruVal = p.thru || "";
+    const thru = p.roundComplete ? "F"
+               : thruVal && thruVal !== "-" && thruVal !== "" ? `${thruVal}`
+               : p.teeTime ? p.teeTime : "-";
+
+    const isCut = p.status === "cut" || p.status === "wd" || p.status === "dq";
 
     return {
-      id:        athlete.id || i,
-      name:      athlete.displayName || `Player ${i+1}`,
+      id:        p.playerId || i,
+      name,
       worldRank: 999,
       pos, score, thru,
-      cut: isOut,
+      cut: isCut,
     };
   });
 
-  // Cross-reference with rankings to assign worldRank
   return rankings.length > 0 ? applyRankings(field, rankings) : field;
 }
 
@@ -1356,7 +1365,9 @@ function LiveDataPanel({league, tournament, rankings, onSaveTournament, onSaveRa
     if(!tournament.majorId){ setScoreError("Select a major in Tournament Setup first."); return; }
     setScoreLoading(true); setScoreError(""); setScoreMsg("");
     try {
-      const field = await fetchLiveData(tournament.majorId, rankings);
+      const major = MAJORS.find(m => m.id === tournament.majorId);
+      if(!major) throw new Error("Major not found — check Tournament Setup.");
+      const field = await fetchLiveData(major, rankings);
       await onSaveTournament({...tournament, field, lastUpdated: new Date().toISOString()});
       const top10inField = field.filter(p => p.worldRank <= 10).length;
       setScoreMsg(`✓ ${field.length} golfers loaded. ${top10inField} world top-10 players in field.`);

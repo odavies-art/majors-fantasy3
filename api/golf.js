@@ -4,34 +4,24 @@ export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
   if(req.method === "OPTIONS") return res.status(200).end();
 
-  const { tournamentId } = req.query;
-  if(!tournamentId) return res.status(400).json({ error: "Missing tournamentId" });
+  const { orgId, tournId, year } = req.query;
+  if(!orgId || !tournId || !year) {
+    return res.status(400).json({ error: "Missing orgId, tournId or year" });
+  }
 
-  // ESPN blocks requests where the server IP isn't in their allowlist.
-  // We spoof the headers to look like a browser navigating from espn.com directly.
-  const url = `https://site.api.espn.com/apis/site/v2/sports/golf/pga/leaderboard/_/tournamentId/${tournamentId}`;
+  const url = `https://live-golf-data.p.rapidapi.com/leaderboard?orgId=${orgId}&tournId=${tournId}&year=${year}`;
 
   try {
     const response = await fetch(url, {
       headers: {
-        "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
-        "Accept": "application/json, text/plain, */*",
-        "Accept-Language": "en-US,en;q=0.9",
-        "Referer": "https://www.espn.com/golf/leaderboard",
-        "Origin": "https://www.espn.com",
-        "sec-fetch-dest": "empty",
-        "sec-fetch-mode": "cors",
-        "sec-fetch-site": "same-site",
-        "Cache-Control": "no-cache",
+        "X-RapidAPI-Key": "92766ebb54msh2c3ec07cacb2b5ep1851b9jsnc0a92e82897a",
+        "X-RapidAPI-Host": "live-golf-data.p.rapidapi.com",
       }
     });
 
     if(!response.ok) {
       const text = await response.text().catch(() => "");
-      return res.status(response.status).json({ 
-        error: `ESPN error ${response.status}`, 
-        detail: text.substring(0, 200) 
-      });
+      return res.status(response.status).json({ error: `API error ${response.status}`, detail: text.substring(0, 200) });
     }
 
     const data = await response.json();
