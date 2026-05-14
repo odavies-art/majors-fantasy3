@@ -13,7 +13,7 @@ export default async function handler(req, res) {
 
   try {
     // ESPN public API — no key required
-    const url = `https://site.api.espn.com/apis/site/v2/sports/golf/pga/leaderboard?tournamentId=${tournamentId}`;
+    const url = `https://site.api.espn.com/apis/site/v2/sports/golf/pga/leaderboard/_/tournamentId/${tournamentId}`;
     const response = await fetch(url, {
       headers: {
         "Accept": "application/json",
