@@ -155,13 +155,13 @@ function calcScore(picks, field, cutLine){
   return {total, breakdown};
 }
 
-// ─── ESPN leaderboard fetch — called directly from browser (ESPN blocks servers) ─
+// ─── ESPN leaderboard fetch (via Vercel proxy to handle CORS) ────────────────
 async function fetchLiveData(majorId, rankings){
-  const url = `https://site.api.espn.com/apis/site/v2/sports/golf/pga/leaderboard/_/tournamentId/${majorId}`;
-  const res = await fetch(url, {
-    headers: { "Accept": "application/json" }
-  });
-  if(!res.ok) throw new Error(`ESPN API error ${res.status}`);
+  const res = await fetch(`/api/golf?tournamentId=${majorId}`);
+  if(!res.ok){
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || `ESPN API ${res.status}${err.detail ? `: ${err.detail}` : ""}`);
+  }
   const data = await res.json();
   const competitors = data?.events?.[0]?.competitions?.[0]?.competitors || [];
   if(competitors.length === 0) throw new Error("No competitors found — tournament may not have started yet.");
