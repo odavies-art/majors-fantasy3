@@ -166,15 +166,6 @@ async function fetchLiveData(major, rankings){
   const rows = data?.leaderboardRows || [];
   if(rows.length === 0) throw new Error("No leaderboard data — tournament may not have started yet.");
 
-  // Unwrap MongoDB extended JSON numbers
-  const num = v => {
-    if(v === null || v === undefined) return null;
-    if(typeof v === "number") return v;
-    if(typeof v === "object" && v.$numberInt !== undefined) return parseInt(v.$numberInt);
-    if(typeof v === "object" && v.$numberLong !== undefined) return parseInt(v.$numberLong);
-    return parseInt(v) || null;
-  };
-
   const field = rows.map((p, i) => {
     const name = `${p.firstName} ${p.lastName}`.trim();
 
